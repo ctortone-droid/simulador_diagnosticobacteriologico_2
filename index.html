@@ -1,0 +1,1520 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Simulador de Diagnóstico Bacteriológico · Medicina Veterinaria</title>
+<meta name="description" content="Simulador didáctico autocontenido del flujo de diagnóstico bacteriológico veterinario: muestras, medios de cultivo, tinción de Gram, pruebas bioquímicas e identificación.">
+<style>
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;font-family:"Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;background:var(--bg);color:var(--ink);font-size:16px;line-height:1.55}
+:root{--bg:#F1F4F7;--surface:#FFFFFF;--ink:#1C2833;--ink-soft:#4D5E6D;--primary:#0E5A5E;--primary-dark:#0A4447;--primary-soft:#E1EEEF;--ok:#14532D;--ok-bg:#E2F2E6;--ok-line:#A9D3B5;--err:#8C1D18;--err-bg:#FAE8E6;--err-line:#E4B3AE;--adv:#6B4400;--adv-bg:#FBF1DB;--adv-line:#E6CD96;--info:#173A5E;--info-bg:#E4EDF7;--info-line:#B4CCE4;--line:#D8DFE6;--radius:14px}
+h1,h2,h3{line-height:1.25;margin:0 0 8px}
+h2{font-size:1.28rem}
+h3{font-size:1.05rem}
+p{margin:0 0 10px}
+ul,ol{margin:0 0 10px;padding-left:22px}
+li{margin-bottom:5px}
+small{color:var(--ink-soft)}
+.wrap{max-width:1020px;margin:0 auto;padding:0 16px}
+button{font:inherit}
+.topbar{background:var(--primary);color:#fff;padding:20px 0 18px;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.topbar h1{font-size:1.38rem;margin:0 0 3px}
+.topbar .sub{margin:0;color:#D2E6E7;font-size:.92rem}
+.topbar .wrap{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;flex-wrap:wrap}
+.top-actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1.5px solid transparent;border-radius:10px;padding:9px 16px;font-weight:600;cursor:pointer;min-height:44px;text-decoration:none;transition:background .15s,transform .05s}
+.btn:active{transform:translateY(1px)}
+.btn.primary{background:var(--primary);color:#fff}
+.btn.primary:hover{background:var(--primary-dark)}
+.btn.sec{background:#fff;border-color:var(--primary);color:var(--primary)}
+.btn.sec:hover{background:var(--primary-soft)}
+.btn.ghost{background:rgba(255,255,255,.10);border-color:rgba(255,255,255,.5);color:#fff}
+.btn.ghost:hover{background:rgba(255,255,255,.2)}
+.btn.small{padding:6px 12px;min-height:36px;font-size:.92rem}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+:where(button,select,input,a,summary):focus-visible{outline:3px solid var(--primary);outline-offset:2px}
+.topbar :focus-visible,.dlg-head :focus-visible{outline-color:#FFD166}
+.stepper{list-style:none;display:flex;flex-wrap:wrap;gap:6px;padding:0;margin:18px 0 0}
+.stepper li{display:flex;align-items:center;gap:7px;border-radius:999px;padding:5px 12px 5px 6px;font-size:.85rem;font-weight:600;background:#fff;border:1.5px solid var(--line);color:var(--ink-soft)}
+.stepper li .num{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:var(--line);color:var(--ink-soft);font-size:.8rem}
+.stepper li.actual{border-color:var(--primary);color:var(--primary);background:var(--primary-soft)}
+.stepper li.actual .num{background:var(--primary);color:#fff}
+.stepper li.hecho{color:var(--ink)}
+.stepper li.hecho .num{background:var(--ok-bg);color:var(--ok);border:1.5px solid var(--ok-line)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px;margin:16px 0;box-shadow:0 1px 3px rgba(16,32,48,.06)}
+.card>h2:first-child{margin-top:0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.cases{display:grid;grid-template-columns:repeat(auto-fit,minmax(272px,1fr));gap:14px}
+.case{display:flex;flex-direction:column;gap:8px}
+.case .tag{font-size:.78rem;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--primary)}
+.case .pac{font-size:.85rem;color:var(--ink-soft)}
+.caso-txt{font-size:.94rem}
+.medios{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin:12px 0}
+.medio-card{position:relative;display:block;border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;cursor:pointer;background:#fff;transition:border-color .15s}
+.medio-card:hover{border-color:var(--primary)}
+.medio-card.sel{border-color:var(--primary);background:var(--primary-soft)}
+.medio-card input{position:absolute;opacity:0;pointer-events:none}
+.medio-card .swatch{display:inline-block;width:14px;height:14px;border-radius:4px;border:1px solid rgba(0,0,0,.25);vertical-align:-2px;margin-right:6px}
+.medio-card .ok-badge{position:absolute;top:10px;right:12px;font-size:.75rem;font-weight:700;color:var(--primary);opacity:0}
+.medio-card.sel .ok-badge{opacity:1}
+.placas{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+.placa{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;text-align:center;margin:0}
+.placa figcaption{font-size:.88rem;color:var(--ink-soft);margin-top:8px;text-align:left}
+.placa .med-name{font-weight:700;margin-bottom:6px}
+.placa svg{max-width:100%;height:auto}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+.tab{border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:7px 14px;font-weight:600;cursor:pointer;min-height:38px}
+.tab[aria-selected="true"]{background:var(--primary);border-color:var(--primary);color:#fff}
+.tests{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:10px;margin:12px 0}
+.test-btn{display:flex;flex-direction:column;gap:3px;align-items:flex-start;background:#fff;border:1.5px solid var(--primary);color:var(--primary);border-radius:12px;padding:10px 12px;cursor:pointer;min-height:58px;text-align:left}
+.test-btn:hover{background:var(--primary-soft)}
+.test-btn:disabled{border-color:var(--line);color:var(--ink-soft);background:#F3F5F7;cursor:not-allowed}
+.test-btn .pr{font-weight:700}
+.test-btn .pp{font-size:.8rem;color:var(--ink-soft)}
+.test-btn .aviso{font-size:.78rem;color:var(--err)}
+.res{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:10px 0}
+.res .rhead{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.res .rhead b{font-size:1rem}
+.res .rbody{display:flex;gap:14px;align-items:flex-start;margin-top:8px;flex-wrap:wrap}
+.res .rbody p{margin:0}
+.res .rinterp{border-top:1px dashed var(--line);margin-top:8px;padding-top:8px}
+.pill{border-radius:999px;padding:2px 12px;font-weight:700;font-size:.85rem;background:var(--info-bg);color:var(--info)}
+.fb{display:flex;gap:10px;align-items:flex-start;border-radius:10px;padding:12px 14px;margin:12px 0;border:1.5px solid}
+.fb svg{flex:none;margin-top:2px}
+.fb.ok{background:var(--ok-bg);border-color:var(--ok-line);color:var(--ok)}
+.fb.err{background:var(--err-bg);border-color:var(--err-line);color:var(--err)}
+.fb.adv{background:var(--adv-bg);border-color:var(--adv-line);color:var(--adv)}
+.fb.info{background:var(--info-bg);border-color:var(--info-line);color:var(--info)}
+.fb b{display:block;margin-bottom:2px}
+.log{display:grid;gap:8px;margin:0;padding:0;list-style:none}
+.log li{background:#fff;border:1px solid var(--line);border-left-width:5px;border-radius:8px;padding:9px 12px;font-size:.92rem;display:flex;justify-content:space-between;gap:10px}
+.log li.ok{border-left-color:#1E8E3E}
+.log li.err{border-left-color:#B3261E}
+.log li.adv{border-left-color:#B26A00}
+.log li.info{border-left-color:#4A6FA5}
+.log .pts{font-weight:700;white-space:nowrap}
+.tbl{width:100%;border-collapse:collapse;font-size:.94rem}
+.tbl th,.tbl td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}
+.tbl th{background:#EDF3F6}
+.tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
+.score-wrap{display:flex;gap:18px;align-items:center;flex-wrap:wrap;margin:6px 0 2px}
+.score{width:96px;height:96px;border-radius:50%;display:grid;place-items:center;text-align:center;font-size:1.5rem;font-weight:800;background:var(--primary-soft);color:var(--primary);border:3px solid var(--primary);flex:none}
+.score small{display:block;font-size:.72rem;font-weight:600}
+dialog{border:none;border-radius:16px;max-width:760px;width:calc(100% - 32px);padding:0;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+dialog::backdrop{background:rgba(8,24,32,.55)}
+.dlg-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 18px;background:var(--primary);color:#fff;border-radius:16px 16px 0 0}
+.dlg-head h2{margin:0;font-size:1.1rem}
+.dlg-body{padding:16px 18px;max-height:68vh;overflow:auto}
+.dlg-body h3{margin-top:14px}
+.cerrar{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.5);color:#fff;border-radius:8px;padding:6px 12px;cursor:pointer;font-weight:600}
+.pie{margin:26px 0 34px;color:var(--ink-soft);font-size:.85rem}
+.mini{font-size:.86rem;color:var(--ink-soft)}
+.consejo{font-style:italic;color:var(--ink-soft);font-size:.9rem;margin:4px 0 10px}
+.detalle{border:1px solid var(--line);border-radius:10px;padding:10px 14px;background:#FBFCFD;margin:8px 0}
+.detalle summary{cursor:pointer;font-weight:600;color:var(--primary)}
+.evi{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.chip{background:var(--info-bg);color:var(--info);border-radius:999px;padding:3px 10px;font-size:.82rem;font-weight:600}
+.overlay{position:fixed;inset:0;background:rgba(10,26,34,.6);display:none;place-items:center;z-index:50}
+.overlay.on{display:grid}
+.overlay .box{background:#fff;border-radius:14px;padding:22px 30px;text-align:center;font-weight:600}
+.spin{width:38px;height:38px;border-radius:50%;border:4px solid var(--primary-soft);border-top-color:var(--primary);animation:girar 1s linear infinite;margin:0 auto 10px}
+@keyframes girar{to{transform:rotate(360deg)}}
+.fila-btn{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.field{display:grid;gap:6px;margin:10px 0}
+select{font:inherit;padding:10px;border:1.5px solid var(--line);border-radius:10px;background:#fff;min-height:44px;max-width:100%}
+label.opt{display:flex;gap:10px;align-items:flex-start;border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;margin:8px 0;cursor:pointer;background:#fff}
+label.opt.sel{border-color:var(--primary);background:var(--primary-soft)}
+label.opt input{margin-top:4px}
+.micro-box{text-align:center;background:#0F1018;border-radius:12px;padding:10px;margin:10px 0}
+@media (max-width:700px){.grid2{grid-template-columns:1fr}.topbar .wrap{flex-direction:column;align-items:flex-start}}
+@media print{.no-print{display:none!important}body{background:#fff}.card{box-shadow:none;page-break-inside:avoid}}
+@media (prefers-reduced-motion:reduce){.spin{animation:none}*{transition:none!important}}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="wrap">
+    <div>
+      <h1>Simulador de Diagnóstico Bacteriológico</h1>
+      <p class="sub">Cátedra de Bacteriología · Medicina Veterinaria · Tercer año</p>
+    </div>
+    <div class="top-actions no-print">
+      <button id="btnCaja" class="btn ghost" type="button">Límites del modelo</button>
+      <button id="btnDocente" class="btn ghost" type="button">Fichas y modo docente</button>
+      <button id="btnReiniciar" class="btn ghost" type="button">Reiniciar</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <ol id="stepper" class="stepper no-print" aria-label="Fases del diagnóstico"></ol>
+  <div id="pantalla" style="min-height:420px"></div>
+</main>
+
+<footer class="pie">
+  <div class="wrap">
+    Herramienta didáctica autocontenida (funciona sin conexión) · Cátedra de Bacteriología, Medicina Veterinaria ·
+    Los perfiles bioquímicos son prototipos de referencia: no reemplazan la bibliografía ni el laboratorio real.
+  </div>
+</footer>
+
+<!-- ===================== CAJA BLANCA ===================== -->
+<dialog id="dlgCaja" aria-labelledby="dlgCajaT">
+  <div class="dlg-head">
+    <h2 id="dlgCajaT">Caja blanca: qué modela y qué no modela este simulador</h2>
+    <button class="cerrar" type="button" data-cerrar="dlgCaja">Cerrar</button>
+  </div>
+  <div class="dlg-body">
+    <h3>Qué modela</h3>
+    <ul>
+      <li>El flujo clásico de diagnóstico bacteriológico: muestra clínica → siembra en medios → observación de colonias → tinción de Gram → pruebas de orientación y bioquímicas → identificación.</li>
+      <li>3 tipos de muestra (hisopado ótico, leche, orina), 3 medios (agar sangre, MacConkey, agar nutritivo) y 7 entidades bacterianas con perfiles prototípicos.</li>
+      <li>Asume un cultivo puro y significativo: una sola bacteria responsable del cuadro.</li>
+    </ul>
+    <h3>Qué NO modela (límites)</h3>
+    <ul>
+      <li><b>Cultivos mixtos, contaminantes y flora comensal:</b> frecuentes en hisopados óticos y de piel; aquí el cultivo siempre es puro.</li>
+      <li><b>Cuantificación:</b> en orina real se informa UFC/mL (≥ 10<sup>5</sup> en micción media apoya ITU; los umbrales cambian según vía de obtención); en leche se acompaña con CMT/CSS y recuento. Aquí la significación se presupone.</li>
+      <li><b>Variabilidad biológica completa:</b> los perfiles son prototipos. En cepas reales, el manitol y el VP de <i>S. pseudintermedius</i>, el indol de <i>Proteus</i> spp. o la hemólisis de <i>S. agalactiae</i> pueden variar; un perfil discrepante obliga a reorientar, no a forzar la conclusión.</li>
+      <li><b>Métodos modernos:</b> paneles comerciales (API, VITEK), MALDI-TOF, PCR, antibiograma, tinciones especiales, tiempos reales (24–72 h) y control de calidad de los medios.</li>
+    </ul>
+    <h3>Cómo se puntúa (rúbrica transparente)</h3>
+    <table class="tbl">
+      <tr><th>Criterio</th><th>Puntos</th><th>Detalle</th></tr>
+      <tr><td>Selección de medios</td><td class="num">15</td><td>Agar sangre (7) + MacConkey (8). Agar nutritivo: opcional, sin puntos.</td></tr>
+      <tr><td>Tinción e interpretación de Gram</td><td class="num">15</td><td>Leer color y disposición celular sobre la imagen.</td></tr>
+      <tr><td>Prueba de orientación</td><td class="num">10</td><td>Catalasa en cocos Gram + / Oxidasa en bacilos Gram −.</td></tr>
+      <tr><td>Panel bioquímico</td><td class="num">30</td><td>Proporcional a las pruebas del panel correcto realizadas.</td></tr>
+      <tr><td>Identificación final</td><td class="num">30</td><td>Especie correcta 30; mismo género 10; incorrecta 0.</td></tr>
+      <tr><td>Siembra sin desarrollo</td><td class="num">−5</td><td>Por cada repetición de siembra.</td></tr>
+    </table>
+    <h3>Mapa ≠ territorio</h3>
+    <p>Este simulador entrena el razonamiento diagnóstico, no reemplaza el laboratorio. El orden de las pruebas en la práctica depende de costos, insumos y urgencia; la competencia se consolida trabajando muestras reales con supervisión docente.</p>
+  </div>
+</dialog>
+
+<!-- ===================== MODO DOCENTE ===================== -->
+<dialog id="dlgDocente" aria-labelledby="dlgDocenteT">
+  <div class="dlg-head">
+    <h2 id="dlgDocenteT">Fichas de especies y modo docente</h2>
+    <button class="cerrar" type="button" data-cerrar="dlgDocente">Cerrar</button>
+  </div>
+  <div class="dlg-body" id="dlgDocenteBody"></div>
+</dialog>
+
+<div id="overlay" class="overlay" aria-hidden="true">
+  <div class="box"><div class="spin"></div>Incubando a 37 °C · 24 h simuladas...</div>
+</div>
+
+<script>
+'use strict';
+/* ============================================================
+   DATOS DEL MODELO (Bloques 3 y 4 del diseño pedagógico)
+   ============================================================ */
+const MEDIOS = {
+  sangre:{nombre:'Agar sangre', sub:'enriquecido · permite ver hemólisis', colorMedio:'#9E2B33',
+    proposito:'Medio enriquecido que soporta la mayoría de los patógenos veterinarios. Permite observar la morfología colonial y la hemólisis (β completa, α parcial, γ nula): la primera clave del caso.'},
+  macconkey:{nombre:'Agar MacConkey', sub:'selectivo · diferencial por lactosa', colorMedio:'#A64D79',
+    proposito:'El cristal violeta y las sales biliares inhiben a las bacterias Gram positivas; selecciona enterobacterias y otros bacilos Gram negativos. Diferencial por lactosa: colonias rosadas (lactosa +) o incoloras (lactosa −).'},
+  nutritivo:{nombre:'Agar nutritivo', sub:'general · mantenimiento', colorMedio:'#EFE0A9',
+    proposito:'Medio general para bacterias no exigentes. Sirve para mantenimiento del cultivo y para observar pigmentos, pero aporta poca información diferencial.'}
+};
+
+const MUESTRAS = {
+  otico:{
+    nombre:'Hisopado ótico', especie:'Canino',
+    paciente:'Canino · Labrador Retriever, 4 años (caso ilustrativo)',
+    corto:'Otitis externa con exudado fétido',
+    caso:'Canino, 4 años, con otitis externa unilateral de 3 semanas de evolución: prurito intenso, eritema del canal y exudado ceruminoso-purulento de olor fétido. La citología previa muestra cocos y células inflamatorias. Se remite hisopado del conducto horizontal para cultivo e identificación.',
+    nota:'En otitis canina la flora puede ser mixta; el modelo asume un cultivo puro significativo.',
+    pool:['pseudintermedius','aureus','proteus']
+  },
+  leche:{
+    nombre:'Leche (mastitis)', especie:'Bovino',
+    paciente:'Bovino · Holando Argentino, 3.ª lactancia (caso ilustrativo)',
+    corto:'Mastitis clínica leve-moderada',
+    caso:'Vaca lechera de tercera lactancia, 40 días posparto. El cuarto trasero derecho presenta leche con grumos y aspecto acuoso; CMT con reacción +2 y recuento de células somáticas elevado (1.200.000 cel/mL). La vaca está afebril y mantiene el apetito. Se remite leche del cuarto afectado para cultivo.',
+    nota:'En mastitis real se acompaña con CMT/CSS y cuantificación por UFC/mL (no modelado).',
+    pool:['agalactiae','aureus','faecalis','ecoli']
+  },
+  orina:{
+    nombre:'Orina', especie:'Canino',
+    paciente:'Canina · Cocker Spaniel, 9 años (caso ilustrativo)',
+    corto:'Signos compatibles con cistitis (ITU)',
+    caso:'Perra de 9 años, esterilizada, con polaquiuria, estranguria y hematuria leve de 5 días. El sedimento urinario muestra piuria y bacterias. Se obtiene orina por cistocentesis para urocultivo con cuantificación.',
+    nota:'Por cistocentesis: ≥ 10<sup>5</sup> UFC/mL en micción media apoya ITU; la cuantificación no está modelada.',
+    pool:['aureus','aeruginosa','ecoli','proteus']
+  }
+};
+
+const OPCIONES_GRAM = [
+  {id:'cumulos', txt:'Cocos Gram positivos en cúmulos (racimos)'},
+  {id:'cadenas', txt:'Cocos Gram positivos en cadenas'},
+  {id:'pares',   txt:'Cocos Gram positivos en pares y cadenas cortas'},
+  {id:'bacilos', txt:'Bacilos Gram negativos rectos'},
+  {id:'gpBacilos', txt:'Bacilos Gram positivos esporulados'},
+  {id:'gnCocos', txt:'Cocos Gram negativos'}
+];
+
+/* Paneles bioquímicos según el árbol del Bloque 4 */
+const PANELES = {
+  staph:{nombre:'Panel de Staphylococcus', pruebas:['manitol','dnasa','vp','coagulasa']},
+  strep:{nombre:'Panel de estreptococos y enterococos', pruebas:['hemolisis','pyr','bacitracina','camp','be','hc']},
+  entero:{nombre:'Panel de Enterobacteriaceae (oxidasa −)', pruebas:['tsi','imvic','fa','ureasa']},
+  pseudo:{nombre:'Panel de bacilos Gram − no fermentadores (oxidasa +)', pruebas:['tsi','citrato','nitrato','t42','kingA','kingB']}
+};
+
+const BACTERIAS = {
+  aureus:{
+    id:'aureus', nombre:'Staphylococcus aureus', genero:'Staphylococcus',
+    micro:'cumulos', gramTxt:'Cocos Gram + en cúmulos (racimos)', optGram:'cumulos',
+    orient:'catalasa', panel:'staph',
+    bio:{catalasa:'pos', manitol:'pos', dnasa:'pos', vp:'pos', coagulasa:'pos'},
+    gramDesc:'Cocos esféricos teñidos de violeta-azulado (conservan el cristal violeta: Gram positivos), dispuestos en cúmulos irregulares semejantes a racimos de uvas.',
+    claves:['Catalasa +','Manitol +','DNAsa +','VP +','Coagulasa +'],
+    camino:[
+      'Sembrar agar sangre + MacConkey: morfología, hemólisis β y ausencia de desarrollo en MacConkey (inhibición de Gram +).',
+      'Tinción de Gram: cocos Gram + en cúmulos → prueba de orientación: catalasa (+).',
+      'Panel de estafilococos: manitol +, DNAsa +, VP +, coagulasa +.',
+      'Identificación: Staphylococcus aureus.'
+    ],
+    colonias:{
+      sangre:{crece:true, desc:'Colonias redondas, convexas y lisas, blancas con tinte dorado, de 2-3 mm. Halo claro de hemólisis β alrededor.',
+        svg:{n:7, r:12, color:'#E0BE66', halo:{r:23, color:'rgba(248,228,170,.34)'}}},
+      macconkey:{crece:false, desc:'Sin desarrollo: el cristal violeta y las sales biliares del medio inhiben a las bacterias Gram positivas. Este resultado también es información.'},
+      nutritivo:{crece:true, desc:'Colonias blancas-amarillentas, opacas y bien desarrolladas. Medio general: aporta poca información diferencial.',
+        svg:{n:8, r:10, color:'#EAD98F'}}
+    },
+    ficha:{
+      resumen:'Coco Gram positivo en cúmulos, catalasa y coagulasa positivos (CoPS), VP + y manitol +. Especie de gran relevancia clínica en las tres muestras del modelo.',
+      clinica:'Leche: causa clásica de mastitis contagiosa bovina (transmisión durante el ordeño). Orina: ITU ocasionales. Hisopado ótico: participa en otitis externas caninas. En todos los casos el antibiograma es imprescindible por la frecuencia de resistencia a penicilinas (β-lactamasa).',
+      variabilidad:'El pigmento dorado puede ser tenue o ausente en algunas cepas; la hemólisis β varía en intensidad.'
+    }
+  },
+  pseudintermedius:{
+    id:'pseudintermedius', nombre:'Staphylococcus pseudintermedius', genero:'Staphylococcus',
+    micro:'cumulos', gramTxt:'Cocos Gram + en cúmulos (racimos)', optGram:'cumulos',
+    orient:'catalasa', panel:'staph',
+    bio:{catalasa:'pos', manitol:'neg', dnasa:'pos', vp:'neg', coagulasa:'pos'},
+    gramDesc:'Cocos esféricos teñidos de violeta-azulado (Gram positivos), dispuestos en cúmulos irregulares. Morfológicamente indistinguible de S. aureus: la bioquímica hará la diferencia.',
+    claves:['Catalasa +','Manitol −','DNAsa +','VP −','Coagulasa +'],
+    camino:[
+      'Sembrar agar sangre + MacConkey: morfología, hemólisis β moderada y ausencia de desarrollo en MacConkey.',
+      'Tinción de Gram: cocos Gram + en cúmulos → catalasa (+).',
+      'Panel de estafilococos: coagulasa + y DNAsa + (grupo CoPS); la diferencia con S. aureus la dan el manitol (−) y el VP (−).',
+      'Identificación: Staphylococcus pseudintermedius (ante dudas: MALDI-TOF).'
+    ],
+    colonias:{
+      sangre:{crece:true, desc:'Colonias blancas-cremas, convexas, de 1-2 mm, con hemólisis β moderada.',
+        svg:{n:8, r:9, color:'#EFE4CF', halo:{r:18, color:'rgba(248,228,170,.26)'}}},
+      macconkey:{crece:false, desc:'Sin desarrollo: medio selectivo contra bacterias Gram positivas.'},
+      nutritivo:{crece:true, desc:'Colonias blancas, bien desarrolladas.',
+        svg:{n:8, r:8, color:'#F0E8D8'}}
+    },
+    ficha:{
+      resumen:'Coco Gram positivo en cúmulos, catalasa +, coagulasa + (CoPS), DNAsa +, VP − y manitol − en la mayoría de las cepas. Principal agente de otitis externa canina.',
+      clinica:'Hisopado ótico: agente más frecuente de la otitis externa y de la piodermia del perro. Su identificación exige separarlo de S. aureus (VP y manitol) y, en el laboratorio, de otros miembros del grupo S. intermedius.',
+      variabilidad:'La fermentación de manitol es variable entre cepas; ante un perfil discrepante se recurre a MALDI-TOF o biología molecular.'
+    }
+  },
+  agalactiae:{
+    id:'agalactiae', nombre:'Streptococcus agalactiae', genero:'Streptococcus',
+    micro:'cadenas', gramTxt:'Cocos Gram + en cadenas', optGram:'cadenas',
+    orient:'catalasa', panel:'strep',
+    bio:{catalasa:'neg', hemolisis:'beta', pyr:'neg', bacitracina:'res', camp:'pos', be:'neg', hc:'agalactiae'},
+    gramDesc:'Cocos teñidos de violeta (Gram positivos) organizados en cadenas largas y regulares.',
+    claves:['Catalasa −','β-hemólisis','PYR −','Bacitracina R','CAMP +','Bilis-esculina −'],
+    camino:[
+      'Sembrar agar sangre + MacConkey: hemólisis β y ausencia de desarrollo en MacConkey.',
+      'Tinción de Gram: cocos Gram + en cadenas → catalasa (−).',
+      'Panel de estreptococos/enterococos: PYR −, CAMP +, bacitracina R, bilis-esculina −.',
+      'Identificación: Streptococcus agalactiae (estreptococo del grupo B).'
+    ],
+    colonias:{
+      sangre:{crece:true, desc:'Colonias pequeñas (≈1 mm), gris-blanquecinas, con hemólisis β amplia y nítida.',
+        svg:{n:10, r:6, color:'#EAE6DF', halo:{r:16, color:'rgba(248,232,178,.42)'}}},
+      macconkey:{crece:false, desc:'Sin desarrollo: medio selectivo contra bacterias Gram positivas.'},
+      nutritivo:{crece:true, desc:'Crecimiento escaso: colonias diminutas y semitransparentes (especie exigente).',
+        svg:{n:10, r:4, color:'#E4DFD3'}}
+    },
+    ficha:{
+      resumen:'Coco Gram positivo en cadenas, catalasa −, β-hemolítico, CAMP +, PYR − y bacitracina R: estreptococo del grupo B.',
+      clinica:'Leche: mastitis contagiosa bovina clásica; coloniza el esfínter del peón y se transmite durante el ordeño. Su control es más sanitario (higiene de ordeño, sellado de pezones, manejo de la vaca cansada) que antibiótico.',
+      variabilidad:'Algunas cepas muestran hemólisis estrecha o casi indetectable; el CAMP y la bilis-esculina ayudan a confirmar.'
+    }
+  },
+  faecalis:{
+    id:'faecalis', nombre:'Enterococcus faecalis', genero:'Enterococcus',
+    micro:'pares', gramTxt:'Cocos Gram + en pares y cadenas cortas', optGram:'pares',
+    orient:'catalasa', panel:'strep',
+    bio:{catalasa:'neg', hemolisis:'gamma', pyr:'pos', bacitracina:'res', camp:'neg', be:'pos', hc:'faecalis'},
+    gramDesc:'Cocos ovalados teñidos de violeta (Gram positivos), en pares y cadenas cortas.',
+    claves:['Catalasa −','γ-hemólisis','PYR +','Bacitracina R','CAMP −','Bilis-esculina +'],
+    camino:[
+      'Sembrar agar sangre + MacConkey: sin hemólisis (γ) y colonias puntiformes rosadas en MacConkey (fermenta lactosa débilmente).',
+      'Tinción de Gram: cocos Gram + en pares y cadenas cortas → catalasa (−).',
+      'Panel de estreptococos/enterococos: PYR +, bilis-esculina +, CAMP −, γ-hemólisis.',
+      'Identificación: Enterococcus faecalis (grupo D).'
+    ],
+    colonias:{
+      sangre:{crece:true, desc:'Colonias puntiformes a 1 mm, grises y semitransparentes, sin alteración del medio: hemólisis γ (nula).',
+        svg:{n:12, r:5, color:'#D8D8D2'}},
+      macconkey:{crece:true, desc:'Colonias muy pequeñas rosadas (fermenta lactosa débilmente): no confundir por tamaño con coliformes.',
+        svg:{n:12, r:4, color:'#DE8FBB'}},
+      nutritivo:{crece:true, desc:'Colonias pequeñas, grises y bien visibles.',
+        svg:{n:12, r:5, color:'#CFCFC7'}}
+    },
+    ficha:{
+      resumen:'Coco Gram positivo en pares y cadenas cortas, catalasa −, PYR +, bilis-esculina +, γ-hemolítico: enterococo del grupo D.',
+      clinica:'Leche: enterococos ambientales asociados a mastitis de origen fecal/ambiental. También es comensal intestinal y patógeno oportunista en ITU y heridas; con frecuencia multirresistente.',
+      variabilidad:'Puede mostrar hemólisis α parcial; crece en bilis y en NaCl al 6,5 % (pruebas no incluidas en el modelo).'
+    }
+  },
+  ecoli:{
+    id:'ecoli', nombre:'Escherichia coli', genero:'Escherichia',
+    micro:'bacilos', gramTxt:'Bacilos Gram − rectos', optGram:'bacilos',
+    orient:'oxidasa', panel:'entero',
+    bio:{oxidasa:'neg', tsi:'ecoli', imvic:'ecoli', fa:'ecoli', ureasa:'neg'},
+    gramDesc:'Bacilos rectos, cortos y uniformes, teñidos de rojo-rosado (Gram negativos), dispuestos aislados o en pares.',
+    claves:['Oxidasa −','TSI A/A gas + H2S −','IMViC ++−−','Lactosa + (MacConkey)','Ureasa −'],
+    camino:[
+      'Sembrar agar sangre + MacConkey: colonias grises húmedas y desarrollo rosado intenso en MacConkey (lactosa +).',
+      'Tinción de Gram: bacilos Gram − rectos → prueba de orientación: oxidasa (−).',
+      'Panel de Enterobacteriaceae: TSI A/A con gas y sin H2S, IMViC ++−−, lactosa +, ureasa −.',
+      'Identificación: Escherichia coli.'
+    ],
+    colonias:{
+      sangre:{crece:true, desc:'Colonias grises, grandes, húmedas y brillantes, de 2-3 mm; sin hemólisis en esta cepa (γ).',
+        svg:{n:7, r:13, color:'#BFC5CA'}},
+      macconkey:{crece:true, desc:'Colonias rosadas intensas a rojo ladrillo, de 2-3 mm, con zona de precipitado de sales biliares: lactosa positiva.',
+        svg:{n:7, r:13, color:'#E06CA0', halo:{r:19, color:'rgba(224,108,160,.28)'}}},
+      nutritivo:{crece:true, desc:'Desarrollo abundante de colonias grises y húmedas.',
+        svg:{n:8, r:12, color:'#C2C8CD'}}
+    },
+    ficha:{
+      resumen:'Bacilo Gram negativo recto, oxidasa −, fermenta glucosa y lactosa con gas, TSI A/A, IMViC ++−−, ureasa − (Enterobacteriaceae).',
+      clinica:'Leche: mastitis coliforme ambiental (curso agudo, con riesgo tóxico por endotoxinas). Orina: principal agente de ITU en pequeñas especies; la interpretación del urocultivo exige contar UFC/mL.',
+      variabilidad:'Algunas cepas son β-hemolíticas o de lactosa lenta; existen patotipos entéricos con factores de virulencia que el modelo no evalúa.'
+    }
+  },
+  proteus:{
+    id:'proteus', nombre:'Proteus spp.', genero:'Proteus',
+    micro:'bacilos', gramTxt:'Bacilos Gram − rectos', optGram:'bacilos',
+    orient:'oxidasa', panel:'entero',
+    bio:{oxidasa:'neg', tsi:'proteus', imvic:'proteus', fa:'proteus', ureasa:'pos'},
+    gramDesc:'Bacilos rectos teñidos de rojo-rosado (Gram negativos), con leve pleomorfismo y disposición individual.',
+    claves:['Oxidasa −','TSI K/A H2S + gas +','IMViC −+−+','Lactosa −','Ureasa +','Enjambre en sangre'],
+    camino:[
+      'Sembrar agar sangre + MacConkey: enjambre en sangre y colonias incoloras (lactosa −) en MacConkey.',
+      'Tinción de Gram: bacilos Gram − rectos → oxidasa (−).',
+      'Panel de Enterobacteriaceae: TSI K/A con H2S + y gas, IMViC −+−+, lactosa −, ureasa + (fuerte).',
+      'Identificación: Proteus spp. (perfil tipo P. mirabilis).'
+    ],
+    colonias:{
+      sangre:{crece:true, desc:'Enjambre (swarming): finas olas concéntricas cubren la placa; olor fétido a amoníaco. Hemólisis β asociada al frente de crecimiento.',
+        svg:{tipo:'enjambre', color:'rgba(122,96,138,.30)'}},
+      macconkey:{crece:true, desc:'Colonias incoloras-pálidas (lactosa negativa); el enjambre queda inhibido en este medio.',
+        svg:{n:6, r:8, color:'#DCC9D6'}},
+      nutritivo:{crece:true, desc:'Enjambre en anillos concéntricos extendido por toda la superficie.',
+        svg:{tipo:'enjambre', color:'rgba(122,96,138,.34)'}}
+    },
+    ficha:{
+      resumen:'Bacilo Gram negativo recto y móvil, oxidasa −, ureasa +, H2S + en TSI (K/A), lactosa − y citrato +. El modelo usa un perfil tipo P. mirabilis.',
+      clinica:'Orina: su ureasa libera amonio y alcaliniza la orina, favoreciendo cálculos de estruvita. Hisopado ótico: presente en otitis crónicas caninas. El enjambre en placa dificulta leer el resto del cultivo (se controla aumentando el agar o usando MacConkey).',
+      variabilidad:'El indol es negativo en P. mirabilis y positivo en P. vulgaris: ante indol + revise el resto del perfil antes de concluir.'
+    }
+  },
+  aeruginosa:{
+    id:'aeruginosa', nombre:'Pseudomonas aeruginosa', genero:'Pseudomonas',
+    micro:'bacilos', gramTxt:'Bacilos Gram − rectos', optGram:'bacilos',
+    orient:'oxidasa', panel:'pseudo',
+    bio:{oxidasa:'pos', tsi:'aeruginosa', citrato:'pos', nitrato:'pos', t42:'pos', kingA:'pos', kingB:'pos'},
+    gramDesc:'Bacilos rectos alargados teñidos de rojo-rosado (Gram negativos), aislados o en pares cortos.',
+    claves:['Oxidasa +','TSI K/K (no fermenta)','Citrato +','Nitrato → N₂ +','Crecimiento a 42 °C +','Piocianina (King A) +','Fluoresceína (King B) +'],
+    camino:[
+      'Sembrar agar sangre + MacConkey: colonias verdosas con pigmento difuso y desarrollo incoloro en MacConkey (lactosa −).',
+      'Tinción de Gram: bacilos Gram − rectos → oxidasa (+): no fermentador.',
+      'Panel de no fermentadores: TSI K/K, citrato +, nitrato → N₂, crecimiento a 42 °C, King A (piocianina) y King B (fluoresceína).',
+      'Identificación: Pseudomonas aeruginosa.'
+    ],
+    colonias:{
+      sangre:{crece:true, desc:'Colonias grandes e irregulares con pigmento verde-azulado difundido al medio; hemólisis β; olor dulce característico.',
+        svg:{n:6, r:12, color:'#6E9E7A', pigmento:{r:40, color:'rgba(74,158,124,.30)'}, halo:{r:20, color:'rgba(248,228,170,.25)'}}},
+      macconkey:{crece:true, desc:'Colonias incoloras-planas grandes (lactosa negativa), con tinte verdoso.',
+        svg:{n:6, r:11, color:'#D3CCD4', pigmento:{r:32, color:'rgba(74,158,124,.25)'}}},
+      nutritivo:{crece:true, desc:'Desarrollo abundante; pigmento verde-azulado (piocianina) difundido en el medio.',
+        svg:{n:7, r:11, color:'#7BA884', pigmento:{r:44, color:'rgba(64,148,118,.35)'}}}
+    },
+    ficha:{
+      resumen:'Bacilo Gram negativo recto, oxidasa +, no fermenta azúcares (TSI K/K), crece a 42 °C, reduce nitratos a N₂ y produce piocianina (King A) y fluoresceína (King B).',
+      clinica:'Orina: asociada a ITU complicadas (sondas, hospitalización) y a infecciones crónicas; también participa en otitis externas. Naturalmente multirresistente: el antibiograma guía todo tratamiento.',
+      variabilidad:'Cepas clínicas pueden perder el pigmento; la oxidasa y el crecimiento a 42 °C son rasgos más estables.'
+    }
+  }
+};
+/* ============================================================
+   PRUEBAS (Bloque 4: motor de reglas del árbol bioquímico)
+   Cada prueba define: nombre, principio, y resultados por valor
+   (pill, observación, interpretación, etiqueta corta y visual SVG).
+   ============================================================ */
+const PRUEBAS = {
+  /* ---------- Pruebas de orientación ---------- */
+  catalasa:{
+    nombre:'Catalasa', tipo:'orientacion',
+    principio:'Colonia + peróxido de hidrógeno (H₂O₂) al 3 %: la catalasa libera O₂ en forma de burbujas.',
+    res:{
+      pos:{pill:'Positiva', corto:'Catalasa +',
+        obs:'Al agregar H₂O₂ al 3 % sobre la colonia se observa burbujeo intenso: liberación de O₂.',
+        interp:'Catalasa positiva: separa a Staphylococcus de los cocos catalasa negativos (Streptococcus, Enterococcus).',
+        visual:{tipo:'placa', fondo:'#F4F1EA', burbujas:true}},
+      neg:{pill:'Negativa', corto:'Catalasa −',
+        obs:'Sin burbujas: la colonia no degrada el H₂O₂.',
+        interp:'Catalasa negativa: orienta hacia Streptococcus o Enterococcus; continúe con el panel correspondiente.',
+        visual:{tipo:'placa', fondo:'#F4F1EA', colonias:true}}
+    }
+  },
+  oxidasa:{
+    nombre:'Oxidasa', tipo:'orientacion',
+    principio:'Reagente de N,N-dimetil-p-fenilendiamina: la citocromo-oxidasa lo oxida y produce un color violeta oscuro.',
+    res:{
+      pos:{pill:'Positiva', corto:'Oxidasa +',
+        obs:'La colonia frotada sobre la tira con reagente vira a violeta oscuro en 10-20 segundos.',
+        interp:'Oxidasa positiva: respiración oxidativa; oriente hacia Pseudomonas y otras bacterias no fermentadoras.',
+        visual:{tipo:'placa', fondo:'#F4F1EA', halos:[{forma:'punto', r:14, color:'#5B2C7E'}]}},
+      neg:{pill:'Negativa', corto:'Oxidasa −',
+        obs:'Sin cambio de color en 30 segundos.',
+        interp:'Oxidasa negativa: oriente hacia Enterobacteriaceae (E. coli, Proteus y otras).',
+        visual:{tipo:'placa', fondo:'#F4F1EA', colonias:true}}
+    }
+  },
+
+  /* ---------- Panel de Staphylococcus ---------- */
+  manitol:{
+    nombre:'Agar manitol salado', panel:'staph',
+    principio:'Medio selectivo (7,5 % NaCl) y diferencial (manitol + rojo fenol): fermentación con ácido vira el medio a amarillo.',
+    res:{
+      pos:{pill:'Manitol +', corto:'Manitol +',
+        obs:'El medio pasa de rojo a amarillo alrededor de las colonias: fermentó el manitol con producción de ácido.',
+        interp:'Manitol +: compatible con S. aureus.',
+        visual:{tipo:'tubo', top:'#E3BE3D'}},
+      neg:{pill:'Manitol −', corto:'Manitol −',
+        obs:'Hay desarrollo de colonias pero el medio permanece rojo: no fermentó el manitol.',
+        interp:'Manitol −: junto con VP − apoya a S. pseudintermedius (resultado variable entre cepas).',
+        visual:{tipo:'tubo', top:'#C4443C'}}
+    }
+  },
+  dnasa:{
+    nombre:'DNAsa (ADNasa termonucleasa)', panel:'staph',
+    principio:'Siembra en agar ADN: tras agregar HCl 1 N, el ADN hidrolizado deja un halo claro/rosado alrededor de la colonia.',
+    res:{
+      pos:{pill:'DNAsa +', corto:'DNAsa +',
+        obs:'Halo rosado bien definido alrededor de la colonia tras agregar HCl: la ADN del medio fue hidrolizada.',
+        interp:'DNAsa +: característico de los Staphylococcus coagulasa positivos (S. aureus y S. pseudintermedius).',
+        visual:{tipo:'placa', fondo:'#3E7C6F', halos:[{forma:'circulo', r:26, color:'rgba(233,150,180,.75)'}], colonias:true}}
+    }
+  },
+  vp:{
+    nombre:'Voges-Proskauer (Barritt)', panel:'staph',
+    principio:'Detección de acetoina (vía del butanediol): α-naftol + KOH desarrollan color rojo-cereza si es positiva.',
+    res:{
+      pos:{pill:'VP +', corto:'VP +',
+        obs:'Color rojo-cereza en la superficie tras agregar los reactivos de Barritt: producción de acetoina.',
+        interp:'VP +: apoya a S. aureus.',
+        visual:{tipo:'tubo', top:'#C0392B', bottom:'#E8DCC8'}},
+      neg:{pill:'VP −', corto:'VP −',
+        obs:'Sin color rojo tras 10-15 minutos de espera.',
+        interp:'VP −: junto con manitol − apoya a S. pseudintermedius.',
+        visual:{tipo:'tubo', top:'#E8DCC8'}}
+    }
+  },
+  coagulasa:{
+    nombre:'Coagulasa en tubo', panel:'staph',
+    principio:'Detecta la coagulación de plasma citratado (conversión de fibrinógeno en fibrina): prueba clave de los CoPS.',
+    res:{
+      pos:{pill:'Coagulasa +', corto:'Coagulasa +',
+        obs:'El plasma citratado se gelifica: coágulo firme tras incubación a 37 °C.',
+        interp:'Coagulasa +: Staphylococcus coagulasa positivos (S. aureus o S. pseudintermedius). Diferéncielos con VP y manitol.',
+        visual:{tipo:'tubo', top:'#E8E0C0', coagulo:true}}
+    }
+  },
+
+  /* ---------- Panel de estreptococos y enterococos ---------- */
+  hemolisis:{
+    nombre:'Observación de hemólisis', panel:'strep', requiere:'sangre',
+    principio:'La hemólisis en agar sangre separa a los cocos catalasa negativos: β completa, α parcial, γ nula.',
+    res:{
+      beta:{pill:'β-hemólisis', corto:'β-hemólisis',
+        obs:'Zona clara y transparente alrededor de las colonias: hemólisis completa (β).',
+        interp:'β-hemólisis: compatible con S. agalactiae dentro del panel catalasa negativo.',
+        visual:{tipo:'placa', fondo:'#9E2B33', halos:[{forma:'circulo', r:34, color:'rgba(246,227,168,.55)'}], colonias:true}},
+      alfa:{pill:'α-hemólisis', corto:'α-hemólisis',
+        obs:'Zona verdosa-parda parcial alrededor de las colonias: hemólisis α.',
+        interp:'α-hemólisis: no corresponde a las especies del modelo; revise el caso.',
+        visual:{tipo:'placa', fondo:'#9E2B33', halos:[{forma:'circulo', r:30, color:'rgba(160,140,90,.35)'}], colonias:true}},
+      gamma:{pill:'γ (sin hemólisis)', corto:'γ-hemólisis',
+        obs:'El agar permanece íntegro alrededor de las colonias: hemólisis γ (nula).',
+        interp:'γ: compatible con Enterococcus faecalis.',
+        visual:{tipo:'placa', fondo:'#9E2B33', colonias:true}}
+    }
+  },
+  pyr:{
+    nombre:'Prueba de PYR', panel:'strep',
+    principio:'Hidrólisis de L-pirrolidonil-β-naftilamida por la pirrolidonil arilamidasa; revelado con DMAC.',
+    res:{
+      pos:{pill:'PYR +', corto:'PYR +',
+        obs:'Color rojo-magenta en 1-2 minutos sobre el disco.',
+        interp:'PYR +: Enterococcus faecalis.',
+        visual:{tipo:'placa', fondo:'#F4F1EA', halos:[{forma:'punto', r:10, color:'#C0392B'}]}},
+      neg:{pill:'PYR −', corto:'PYR −',
+        obs:'Sin cambio de color en el disco.',
+        interp:'PYR −: apoya a Streptococcus agalactiae.',
+        visual:{tipo:'placa', fondo:'#F4F1EA', halos:[{forma:'punto', r:10, color:'#C8C2B4'}]}}
+    }
+  },
+  bacitracina:{
+    nombre:'Sensibilidad a bacitracina (0,04 U)', panel:'strep',
+    principio:'Difusión en disco: los estreptococos del grupo A son sensibles; el grupo B y los enterococos suelen ser resistentes.',
+    res:{
+      res:{pill:'Resistente', corto:'Bacitracina R',
+        obs:'Sin halo de inhibición alrededor del disco: cepa resistente.',
+        interp:'Bacitracina R: consistente con el grupo B (S. agalactiae) y con enterococos; diferéncielos con CAMP, PYR y bilis-esculina.',
+        visual:{tipo:'placa', fondo:'#C9BBA0', lawn:true, disco:true}},
+      sens:{pill:'Sensible', corto:'Bacitracina S',
+        obs:'Halo de inhibición ≥ 10 mm alrededor del disco.',
+        interp:'Bacitracina S: sugiere estreptococo del grupo A, infrecuente en estas muestras del modelo.',
+        visual:{tipo:'placa', fondo:'#C9BBA0', lawn:true, disco:true, haloDisco:true}}
+    }
+  },
+  camp:{
+    nombre:'Prueba de CAMP', panel:'strep',
+    principio:'Sinergia hemolítica entre la esfingomielinasa C de S. aureus (siembra central) y la colonia problema en agar sangre.',
+    res:{
+      pos:{pill:'CAMP +', corto:'CAMP +',
+        obs:'Zona de hemólisis intensificada en forma de flecha entre la siembra de S. aureus y la colonia problema.',
+        interp:'CAMP +: Streptococcus agalactiae.',
+        visual:{tipo:'placa', fondo:'#9E2B33', flecha:true}},
+      neg:{pill:'CAMP −', corto:'CAMP −',
+        obs:'Sin intensificación de la hemólisis entre las siembras.',
+        interp:'CAMP −: no apoya a S. agalactiae.',
+        visual:{tipo:'placa', fondo:'#9E2B33', rayas:true}}
+    }
+  },
+  be:{
+    nombre:'Bilis-esculina', panel:'strep',
+    principio:'Crecimiento en presencia de bilis + hidrólisis de esculina: la esculetina forma un complejo negro con el Fe³⁺.',
+    res:{
+      pos:{pill:'Bilis-esculina +', corto:'Bilis-esculina +',
+        obs:'El medio se oscurece a marrón-negro: creció en bilis e hidrolizó la esculina.',
+        interp:'Bilis-esculina +: Enterococcus faecalis.',
+        visual:{tipo:'tubo', top:'#4E342E'}},
+      neg:{pill:'Bilis-esculina −', corto:'Bilis-esculina −',
+        obs:'Medio sin oscurecer, con desarrollo escaso o nulo.',
+        interp:'Bilis-esculina −: no apoya a Enterococcus; apoya a S. agalactiae.',
+        visual:{tipo:'tubo', top:'#D9C9A8'}}
+    }
+  },
+  hc:{
+    nombre:'Fermentación de hidratos de carbono', panel:'strep',
+    principio:'Tubos con glucosa, lactosa y sacarosa (rojo fenol + campana de Durham): el ácido vira a amarillo.',
+    porBacteria:{
+      agalactiae:{pill:'G+ L+ S−', corto:'HC: glucosa +, lactosa +, sacarosa −',
+        obs:'Fermenta glucosa y lactosa con viraje a amarillo; no fermenta la sacarosa.',
+        interp:'Perfil de fermentación coherente con S. agalactiae; úselo junto con CAMP y PYR.',
+        visual:{tipo:'tubos', lista:[{c:'#E3BE3D', gas:true, l:'G'},{c:'#E3BE3D', gas:true, l:'L'},{c:'#C4443C', l:'S'}]}},
+      faecalis:{pill:'G+ L+ S+', corto:'HC: glucosa +, lactosa +, sacarosa +',
+        obs:'Fermenta glucosa, lactosa y sacarosa con viraje a amarillo.',
+        interp:'Fermentación amplia, coherente con Enterococcus; combine con PYR + y bilis-esculina +.',
+        visual:{tipo:'tubos', lista:[{c:'#E3BE3D', gas:true, l:'G'},{c:'#E3BE3D', gas:true, l:'L'},{c:'#E3BE3D', l:'S'}]}}
+    }
+  },
+
+  /* ---------- Panel de Enterobacteriaceae (oxidasa −) ---------- */
+  tsi:{
+    nombre:'TSI (triple azúcar hierro)', panel:'entero',
+    principio:'Lactosa/sacarosa/glucosa + peptonas, sulfato ferroso y campana: se lee tracha (aerobiosis) y fondo (anaerobiosis), H₂S y gas.',
+    porBacteria:{
+      ecoli:{pill:'A/A gas + H₂S −', corto:'TSI A/A gas +, H₂S −',
+        obs:'Tracha amarilla y fondo amarillo (A/A), gas en la campana, sin H₂S.',
+        interp:'Fermentador ácido-ácido con gas: patrón coliforme; apoya a E. coli.',
+        visual:{tipo:'tubo', top:'#E3BE3D', bottom:'#E3BE3D', gas:true}},
+      proteus:{pill:'K/A H₂S + gas +', corto:'TSI K/A, H₂S +, gas +',
+        obs:'Tracha roja (K) y fondo amarillo (A), precipitado negro de H₂S y gas.',
+        interp:'Alcalino/ácido con H₂S +: compatible con Proteus.',
+        visual:{tipo:'tubo', top:'#C4443C', bottom:'#E3BE3D', gas:true, h2s:true}},
+      aeruginosa:{pill:'K/K sin gas ni H₂S', corto:'TSI K/K (no fermenta)',
+        obs:'Tracha roja y fondo rojo (K/K) sin gas ni H₂S: no fermenta azúcares.',
+        interp:'No fermentador: apoya a Pseudomonas; confirme con oxidasa (+).',
+        visual:{tipo:'tubo', top:'#C4443C', bottom:'#C4443C'}}
+    }
+  },
+  imvic:{
+    nombre:'IMViC (Indol, Rojo de metilo, VP, Citrato)', panel:'entero',
+    principio:'Cuatro pruebas clásicas de Enterobacteriaceae que se leen como un patrón de cuatro signos.',
+    porBacteria:{
+      ecoli:{pill:'++−−', corto:'IMViC ++−−',
+        obs:'Indol y rojo de metilo positivos; VP y citrato negativos.',
+        interp:'Patrón IMViC ++−−: clásico de E. coli.',
+        tabla:[['Indol','+'],['Rojo de metilo','+'],['Voges-Proskauer','−'],['Citrato (Simmons)','−']]},
+      proteus:{pill:'−+−+', corto:'IMViC −+−+',
+        obs:'Indol negativo, rojo de metilo positivo, VP negativo, citrato positivo.',
+        interp:'Patrón IMViC −+−+: compatible con Proteus (perfil tipo P. mirabilis; P. vulgaris es indol +).',
+        tabla:[['Indol','−'],['Rojo de metilo','+'],['Voges-Proskauer','−'],['Citrato (Simmons)','+']]},
+      aeruginosa:{pill:'−+−+', corto:'IMViC −+−+',
+        obs:'Indol negativo, rojo de metilo positivo, VP negativo, citrato positivo.',
+        interp:'En una oxidasa + este patrón apoya a Pseudomonas; el IMViC clásico se usa en Enterobacteriaceae.',
+        tabla:[['Indol','−'],['Rojo de metilo','+'],['Voges-Proskauer','−'],['Citrato (Simmons)','+']]}
+    }
+  },
+  fa:{
+    nombre:'Fermentación de azúcares (FA)', panel:'entero',
+    principio:'Tubos de fermentación con glucosa, lactosa y sacarosa (rojo fenol + campana de Durham).',
+    porBacteria:{
+      ecoli:{pill:'G+ L+ S−', corto:'FA: lactosa + con gas',
+        obs:'Fermenta glucosa y lactosa con producción de gas; no usa la sacarosa.',
+        interp:'Lactosa + con gas: coliforme; apoya a E. coli.',
+        visual:{tipo:'tubos', lista:[{c:'#E3BE3D', gas:true, l:'G'},{c:'#E3BE3D', gas:true, l:'L'},{c:'#C4443C', l:'S'}]}},
+      proteus:{pill:'G+ L− S−', corto:'FA: lactosa −',
+        obs:'Fermenta glucosa con gas; no fermenta lactosa ni sacarosa.',
+        interp:'Lactosa −: compatible con Proteus.',
+        visual:{tipo:'tubos', lista:[{c:'#E3BE3D', gas:true, l:'G'},{c:'#C4443C', l:'L'},{c:'#C4443C', l:'S'}]}}
+    }
+  },
+  ureasa:{
+    nombre:'Ureasa', panel:'entero',
+    principio:'Hidrólisis de la urea → amonio: la alcalinización vira el rojo fenol a fucsia.',
+    res:{
+      pos:{pill:'Ureasa +', corto:'Ureasa +',
+        obs:'Vira a fucsia intenso, a veces en pocas horas: hidrólisis rápida y abundante de la urea.',
+        interp:'Ureasa +: marcador fuerte de Proteus.',
+        visual:{tipo:'tubo', top:'#D64570'}},
+      neg:{pill:'Ureasa −', corto:'Ureasa −',
+        obs:'El medio permanece amarillo-arena: sin actividad ureasa.',
+        interp:'Ureasa −: no apoya a Proteus; apoya a E. coli.',
+        visual:{tipo:'tubo', top:'#E3D39A'}}
+    }
+  },
+
+  /* ---------- Panel de no fermentadores (oxidasa +) ---------- */
+  citrato:{
+    nombre:'Citrato de Simmons', panel:'pseudo',
+    principio:'Citrato como única fuente de carbono; el azul de bromotimol vira de verde a azul al alcalinizar.',
+    res:{
+      pos:{pill:'Citrato +', corto:'Citrato +',
+        obs:'Desarrollo visible y viraje de verde a azul intenso: utiliza el citrato y alcaliniza el medio.',
+        interp:'Citrato +: apoya a Pseudomonas aeruginosa (y a Proteus).',
+        visual:{tipo:'tubo', top:'#2E86C1'}},
+      neg:{pill:'Citrato −', corto:'Citrato −',
+        obs:'Sin desarrollo ni viraje de color.',
+        interp:'Citrato −: apoya a E. coli (junto con IMViC ++−−).',
+        visual:{tipo:'tubo', top:'#7DA88B'}}
+    }
+  },
+  nitrato:{
+    nombre:'Nitrato reductasa', panel:'pseudo',
+    principio:'Reducción del NO₃⁻: a NO₂⁻ (rojo con los reactivos) o a N₂ gas (denitrificación completa).',
+    res:{
+      pos:{pill:'Nitrato +', corto:'Nitrato → N₂ +',
+        obs:'Se evidencia gas (N₂) al agregar los reactivos con control de zinc: la cepa reduce nitratos a N₂ (denitrificación).',
+        interp:'Nitrato reductasa + con gas: apoya a Pseudomonas aeruginosa.',
+        visual:{tipo:'tubo', top:'#DDE6EA', gas:true}},
+      neg:{pill:'Nitrato −', corto:'Nitrato −',
+        obs:'Tras agregar zinc aparece color rojo: los nitratos no fueron reducidos.',
+        interp:'Nitrato −: no apoya a P. aeruginosa.',
+        visual:{tipo:'tubo', top:'#DDE6EA'}}
+    }
+  },
+  t42:{
+    nombre:'Crecimiento a 42 °C', panel:'pseudo',
+    principio:'Siembra en paralelo a 37 °C y 42 °C; lectura a las 24 h.',
+    res:{
+      pos:{pill:'42 °C +', corto:'Crecimiento a 42 °C +',
+        obs:'Desarrollo abundante en el tubo incubado a 42 °C.',
+        interp:'Crece a 42 °C: característico de P. aeruginosa.',
+        visual:{tipo:'tubo', top:'#7BA884'}},
+      neg:{pill:'42 °C −', corto:'Crecimiento a 42 °C −',
+        obs:'Sin desarrollo a 42 °C (solo crece a 37 °C).',
+        interp:'No crece a 42 °C: descarta a P. aeruginosa en este perfil.',
+        visual:{tipo:'tubo', top:'#E3D39A'}}
+    }
+  },
+  kingA:{
+    nombre:'Agar King A (Pseudomonas)', panel:'pseudo',
+    principio:'Medio específico para detectar piocianina, el pigmento azul-verdoso característico de P. aeruginosa.',
+    res:{
+      pos:{pill:'Piocianina +', corto:'King A: piocianina +',
+        obs:'Pigmento azul-verdoso difundido en el medio alrededor de la colonia: piocianina.',
+        interp:'Piocianina +: prácticamente confirmatoria de Pseudomonas aeruginosa.',
+        visual:{tipo:'tubo', top:'#3D8FA8'}}
+    }
+  },
+  kingB:{
+    nombre:'Agar King B (Pseudomonas)', panel:'pseudo',
+    principio:'Medio específico para detectar fluoresceína (pioverdina), visible acentuada bajo luz UV.',
+    res:{
+      pos:{pill:'Fluoresceína +', corto:'King B: fluoresceína +',
+        obs:'Pigmento amarillo-verdoso fluorescente en el medio (se acentúa bajo luz UV).',
+        interp:'Fluoresceína +: apoya a P. aeruginosa (no es exclusiva: otras Pseudomonas también la producen).',
+        visual:{tipo:'tubo', top:'#C9D34A'}}
+    }
+  }
+};
+/* ============================================================
+   NÚCLEO DE LA APLICACIÓN
+   ============================================================ */
+const $ = s => document.querySelector(s);
+const qsa = s => Array.from(document.querySelectorAll(s));
+
+const FASES = [
+  {id:'inicio', label:'Caso'},
+  {id:'siembra', label:'Siembra'},
+  {id:'observacion', label:'Observación'},
+  {id:'gram', label:'Tinción'},
+  {id:'orientacion', label:'Orientación'},
+  {id:'bioquimica', label:'Bioquímica'},
+  {id:'identificacion', label:'Identificación'},
+  {id:'informe', label:'Informe'}
+];
+
+const state = {
+  fase:'inicio', muestra:null, bact:null, forzado:null,
+  mediosSel:[], mediosSembrados:[], siembras:0, tabObs:null,
+  gramHecho:false, gramResp:null, gramEval:null,
+  orientacion:null, orientErr:null, orientErrTxt:'',
+  pruebas:[], resultados:{}, idElegida:null,
+  log:[], historial:[]
+};
+
+function resetState(){
+  Object.assign(state,{
+    fase:'inicio', muestra:null, bact:null, forzado:null,
+    mediosSel:[], mediosSembrados:[], siembras:0, tabObs:null,
+    gramHecho:false, gramResp:null, gramEval:null,
+    orientacion:null, orientErr:null, orientErrTxt:'',
+    pruebas:[], resultados:{}, idElegida:null, log:[]
+  });
+}
+
+function log(tipo, texto, pts, tag){
+  state.log.push({tipo, texto, pts:pts||0, tag:tag||''});
+}
+
+const IC = {
+  ok:'<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12.5l5 5L20 6.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  err:'<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>',
+  adv:'<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3L2.5 20.5h19L12 3z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/><path d="M12 9.5v5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><circle cx="12" cy="17.2" r="1.35" fill="currentColor"/></svg>',
+  info:'<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M12 10.5v6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><circle cx="12" cy="7.6" r="1.4" fill="currentColor"/></svg>'
+};
+
+function fbHTML(tipo, titulo, texto){
+  const ic = tipo==='ok'?'ok':tipo==='err'?'err':tipo==='adv'?'adv':'info';
+  const role = tipo==='err'?'alert':'status';
+  return '<div class="fb '+tipo+'" role="'+role+'">'+IC[ic]+'<div><b>'+titulo+'</b>'+texto+'</div></div>';
+}
+
+/* ---------- SVG: placa de Petri ---------- */
+function rng(seedStr){
+  let h = 1779033707 ^ seedStr.length;
+  for(let i=0;i<seedStr.length;i++){
+    h = Math.imul(h ^ seedStr.charCodeAt(i), 3432918353);
+    h = (h<<13) | (h>>>19);
+  }
+  let a = h>>>0;
+  return function(){
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a>>>15), 1 | a);
+    t = (t + Math.imul(t ^ (t>>>7), 61 | t)) ^ t;
+    return ((t ^ (t>>>14))>>>0) / 4294967296;
+  };
+}
+
+function dishSVG(bactId, medioId, size){
+  const b = BACTERIAS[bactId];
+  const col = b.colonias[medioId];
+  const M = MEDIOS[medioId];
+  const c = 95, Rm = 84, Rc = 74;
+  const rand = rng(bactId+'|'+medioId);
+  let s = '';
+  s += '<circle cx="'+c+'" cy="'+c+'" r="'+Rm+'" fill="#E9E4D8" stroke="#B7AE9C" stroke-width="2"/>';
+  s += '<circle cx="'+c+'" cy="'+c+'" r="'+(Rm-7)+'" fill="'+M.colorMedio+'"/>';
+  s += '<circle cx="'+c+'" cy="'+c+'" r="'+(Rm-7)+'" fill="none" stroke="rgba(0,0,0,.18)" stroke-width="2"/>';
+  if(col && col.crece && col.svg){
+    const v = col.svg;
+    if(v.pigmento) s += '<circle cx="'+c+'" cy="'+c+'" r="'+v.pigmento.r+'" fill="'+v.pigmento.color+'"/>';
+    if(v.tipo==='enjambre'){
+      for(let i=1;i<=4;i++){
+        s += '<circle cx="'+c+'" cy="'+c+'" r="'+(14+i*14)+'" fill="none" stroke="'+v.color+'" stroke-width="'+(9-i)+'" opacity="'+(0.95-i*0.13).toFixed(2)+'"/>';
+      }
+      s += '<circle cx="'+c+'" cy="'+c+'" r="16" fill="'+v.color+'"/>';
+    } else if(v.n){
+      const pos = [];
+      for(let i=0;i<v.n;i++){
+        const ang = (i*2.39996) + (rand()-0.5)*0.5;
+        const dist = (Rc-12)*(0.18+0.72*Math.sqrt((i+0.5)/v.n)) + (rand()-0.5)*6;
+        pos.push([c+Math.cos(ang)*dist, c+Math.sin(ang)*dist]);
+      }
+      if(v.halo) pos.forEach(p=>{ s += '<circle cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="'+v.halo.r+'" fill="'+v.halo.color+'"/>'; });
+      pos.forEach(p=>{ s += '<circle cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="'+v.r+'" fill="'+v.color+'" stroke="rgba(0,0,0,.22)" stroke-width="1"/>'; });
+    }
+  } else {
+    s += '<text x="'+c+'" y="'+(c+4)+'" text-anchor="middle" font-size="12" font-weight="700" fill="rgba(0,0,0,.55)">SIN DESARROLLO</text>';
+  }
+  const alt = 'Placa de '+M.nombre+(col && col.crece ? ' con desarrollo bacteriano' : ' sin desarrollo');
+  return '<svg viewBox="0 0 190 190" width="'+size+'" height="'+size+'" role="img" aria-label="'+alt+'">'+s+'</svg>';
+}
+
+/* ---------- SVG: campo microscópico (tinción de Gram) ---------- */
+function microSVG(kind){
+  const rand = rng('micro|'+kind);
+  const W = 240, H = 170;
+  let s = '<rect x="0" y="0" width="'+W+'" height="'+H+'" rx="10" fill="#0F1018"/>';
+  for(let i=0;i<26;i++){
+    s += '<circle cx="'+(rand()*W).toFixed(1)+'" cy="'+(rand()*H).toFixed(1)+'" r="'+(rand()*1.6+0.6).toFixed(1)+'" fill="rgba(255,255,255,.10)"/>';
+  }
+  const P = '#8E6FC6', R = '#D66E8C';
+  if(kind==='cumulos'){
+    const clus = [[55,55],[130,48],[90,115],[175,110]];
+    clus.forEach(cc=>{
+      for(let i=0;i<9;i++){
+        const x = cc[0] + (rand()-0.5)*26, y = cc[1] + (rand()-0.5)*26;
+        s += '<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="7" fill="'+P+'" stroke="rgba(0,0,0,.35)" stroke-width="1"/>';
+      }
+    });
+  } else if(kind==='cadenas'){
+    for(let ch=0; ch<4; ch++){
+      let x = 30+rand()*(W-110), y = 25+rand()*(H-60), ang = (rand()-0.5)*0.9;
+      for(let i=0;i<7;i++){
+        s += '<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="5.5" fill="'+P+'" stroke="rgba(0,0,0,.35)" stroke-width="1"/>';
+        x += Math.cos(ang)*13; y += Math.sin(ang)*13;
+      }
+    }
+  } else if(kind==='pares'){
+    for(let i=0;i<8;i++){
+      const x = 25+rand()*(W-60), y = 25+rand()*(H-60);
+      s += '<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="6" fill="'+P+'" stroke="rgba(0,0,0,.35)" stroke-width="1"/>';
+      s += '<circle cx="'+(x+11).toFixed(1)+'" cy="'+(y+3).toFixed(1)+'" r="6" fill="'+P+'" stroke="rgba(0,0,0,.35)" stroke-width="1"/>';
+    }
+  } else { /* bacilos */
+    for(let i=0;i<18;i++){
+      const x = 22+rand()*(W-70), y = 20+rand()*(H-45), rot = (rand()-0.5)*80;
+      s += '<rect x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" width="17" height="7" rx="3.5" fill="'+R+'" stroke="rgba(0,0,0,.35)" stroke-width="1" transform="rotate('+rot.toFixed(0)+' '+(x+8.5).toFixed(1)+' '+(y+3.5).toFixed(1)+')"/>';
+    }
+  }
+  const label = kind==='bacilos' ? 'Bacilos Gram negativos en el campo microscópico' : 'Cocos Gram positivos en el campo microscópico';
+  return '<svg viewBox="0 0 '+W+' '+H+'" width="260" height="'+Math.round(H*260/W)+'" role="img" aria-label="'+label+'">'+s+'</svg>';
+}
+
+/* ---------- SVG: tubos y placas de pruebas bioquímicas ---------- */
+function tubeInner(color, gas, h2s, coagulo){
+  let t = '<rect x="22" y="10" width="26" height="86" rx="11" fill="'+color+'"/>';
+  t += '<rect x="22" y="10" width="26" height="86" rx="11" fill="none" stroke="rgba(60,80,95,.55)" stroke-width="2"/>';
+  if(h2s) t += '<ellipse cx="35" cy="88" rx="9" ry="6" fill="#1F1F1F"/>';
+  if(gas) t += '<circle cx="35" cy="72" r="5" fill="#FFFFFF" opacity=".92"/>';
+  if(coagulo) t += '<rect x="25" y="58" width="20" height="14" rx="4" fill="#C9B26A" stroke="rgba(0,0,0,.25)"/>';
+  return t;
+}
+function tubeFrame(inner, w){
+  return '<svg viewBox="0 0 '+(w||70)+' 104" width="'+(w||70)+'" height="104" role="img" aria-label="Tubo de ensayo con el resultado de la prueba">'
+    + '<ellipse cx="35" cy="10" rx="13" ry="4" fill="#DDE4EA"/>' + inner + '</svg>';
+}
+function testSVG(sp){
+  if(!sp) return '';
+  if(sp.tipo==='tubo'){
+    return tubeFrame(tubeInner(sp.top||'#DDE6EA', sp.gas, sp.h2s, sp.coagulo));
+  }
+  if(sp.tipo==='tubos'){
+    let t = '';
+    sp.lista.forEach((o,i)=>{
+      const x = 8+i*62;
+      t += '<g transform="translate('+x+',0)">'+tubeInner(o.c, o.gas)+'</g>';
+      t += '<text x="'+(x+35)+'" y="101" text-anchor="middle" font-size="13" font-weight="700" fill="#4D5E6D">'+o.l+'</text>';
+    });
+    return '<svg viewBox="0 0 '+(sp.lista.length*62+16)+' 104" width="'+(sp.lista.length*62+16)+'" height="104" role="img" aria-label="Tubos de fermentación">'+t+'</svg>';
+  }
+  if(sp.tipo==='placa'){
+    const cxy = 65, R = 58, Ri = 52;
+    const rand = rng('t'+(sp.fondo||'')+JSON.stringify(sp.halos||[]) );
+    let s = '<circle cx="'+cxy+'" cy="'+cxy+'" r="'+R+'" fill="#E9E4D8" stroke="#B7AE9C" stroke-width="2"/>';
+    s += '<circle cx="'+cxy+'" cy="'+cxy+'" r="'+Ri+'" fill="'+(sp.fondo||'#DDD')+'"/>';
+    if(sp.lawn){
+      for(let i=0;i<70;i++){
+        const ang = rand()*6.283, d = rand()*46;
+        s += '<circle cx="'+(cxy+Math.cos(ang)*d).toFixed(1)+'" cy="'+(cxy+Math.sin(ang)*d).toFixed(1)+'" r="2" fill="rgba(255,255,255,.5)"/>';
+      }
+    }
+    if(sp.rayas){
+      s += '<rect x="62" y="16" width="6" height="98" rx="3" fill="rgba(120,80,50,.5)"/>';
+    }
+    (sp.halos||[]).forEach(h=>{
+      if(h.forma==='circulo') s += '<circle cx="'+cxy+'" cy="'+cxy+'" r="'+h.r+'" fill="'+h.color+'"/>';
+      if(h.forma==='punto') s += '<circle cx="'+cxy+'" cy="'+cxy+'" r="'+h.r+'" fill="'+h.color+'"/>';
+    });
+    if(sp.haloDisco) s += '<circle cx="'+cxy+'" cy="'+cxy+'" r="26" fill="rgba(255,255,255,.4)"/>';
+    if(sp.flecha){
+      s += '<rect x="62" y="16" width="6" height="98" rx="3" fill="rgba(120,80,50,.5)"/>';
+      s += '<path d="M65 30 L84 60 L72 60 L72 76 L58 76 L58 60 L46 60 Z" fill="rgba(246,227,168,.6)"/>';
+    }
+    if(sp.colonias){
+      for(let i=0;i<5;i++){
+        const ang = rand()*6.283, d = 10+rand()*34;
+        s += '<circle cx="'+(cxy+Math.cos(ang)*d).toFixed(1)+'" cy="'+(cxy+Math.sin(ang)*d).toFixed(1)+'" r="5" fill="#EDE7DA" stroke="rgba(0,0,0,.2)"/>';
+      }
+    }
+    if(sp.disco) s += '<circle cx="'+cxy+'" cy="'+cxy+'" r="9" fill="#F5F5F2" stroke="#8A939B"/>';
+    if(sp.burbujas){
+      for(let i=0;i<9;i++){
+        const x = 35+rand()*60, y = 35+rand()*60;
+        s += '<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="'+(rand()*5+2).toFixed(1)+'" fill="rgba(255,255,255,.85)" stroke="rgba(90,110,120,.4)"/>';
+      }
+    }
+    return '<svg viewBox="0 0 130 130" width="112" height="112" role="img" aria-label="Preparación con el resultado de la prueba">'+s+'</svg>';
+  }
+  return '';
+}
+
+/* ---------- Navegación ---------- */
+function renderStepper(){
+  const idx = FASES.findIndex(f=>f.id===state.fase);
+  $('#stepper').innerHTML = FASES.map((f,i)=>
+    '<li class="'+(i===idx?'actual':(i<idx?'hecho':''))+'"><span class="num">'+(i<idx?'<svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12.5l5 5L20 6.5" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>':(i+1))+'</span>'+f.label+'</li>'
+  ).join('');
+}
+function go(fase){
+  state.fase = fase;
+  renderStepper();
+  renderFase();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+function renderFase(){
+  const p = $('#pantalla');
+  if(state.fase==='inicio') p.innerHTML = htmlInicio();
+  else if(state.fase==='siembra') p.innerHTML = htmlSiembra();
+  else if(state.fase==='observacion') p.innerHTML = htmlObservacion();
+  else if(state.fase==='gram') p.innerHTML = htmlGram();
+  else if(state.fase==='orientacion') p.innerHTML = htmlOrientacion();
+  else if(state.fase==='bioquimica') p.innerHTML = htmlBioquimica();
+  else if(state.fase==='identificacion') p.innerHTML = htmlIdentificacion();
+  else if(state.fase==='informe') p.innerHTML = htmlInforme();
+  bindFase(state.fase);
+}
+
+/* ---------- Fase: INICIO ---------- */
+function htmlInicio(){
+  let h = '';
+  h += '<div class="card">'
+    + '<h2>Objetivo de aprendizaje</h2>'
+    + '<p>Comprender cómo se realiza el <b>diagnóstico bacteriológico</b> identificando bacterias a partir de su desarrollo en diferentes medios de cultivo, su tinción de Gram y su perfil bioquímico.</p>'
+    + '<p>Al terminar cada caso, deberá poder:</p>'
+    + '<ol><li>Justificar la selección de los medios de cultivo.</li>'
+    + '<li>Leer la morfología colonial y la hemólisis en cada placa.</li>'
+    + '<li>Interpretar la tinción de Gram y elegir la prueba de orientación (catalasa u oxidasa).</li>'
+    + '<li>Recorrer el árbol bioquímico y acumular evidencia para identificar la bacteria.</li></ol>'
+    + '<details class="detalle"><summary>Cómo funciona (4 pasos)</summary>'
+    + '<ol><li>Elija un caso clínico (muestra).</li><li>Siembre los medios que considere necesarios e incube.</li>'
+    + '<li>Observe las placas, realice la tinción de Gram y recorra el árbol de pruebas bioquímicas.</li>'
+    + '<li>Identifique la bacteria y reciba su informe con puntaje, camino óptimo y ficha de la especie.</li></ol>'
+    + '<p class="mini">Antes de empezar, abra <b>Límites del modelo</b> (caja blanca): declare qué simula y qué no simula esta herramienta.</p></details>'
+    + '</div>';
+  h += '<div class="card"><h2>Elija el caso clínico</h2>'
+    + '<p class="consejo">Cada caso toma una bacteria al azar entre las posibles para esa muestra: no intente adivinar, razona con la evidencia.</p>'
+    + '<div class="cases">';
+  Object.entries(MUESTRAS).forEach(([mid,m])=>{
+    h += '<div class="card case" style="margin:0">'
+      + '<span class="tag">'+m.nombre+'</span>'
+      + '<span class="pac">'+m.paciente+'</span>'
+      + '<p class="caso-txt">'+m.caso+'</p>'
+      + '<p class="mini"><b>Posibles agentes del modelo:</b> '+m.pool.map(id=>BACTERIAS[id].nombre).join(', ')+'. '+m.nota+'</p>'
+      + '<button class="btn primary" type="button" data-muestra="'+mid+'">Tomar este caso</button>'
+      + '</div>';
+  });
+  h += '</div></div>';
+  if(state.historial.length){
+    h += '<div class="card"><h2>Casos resueltos en esta sesión</h2><table class="tbl">'
+      + '<tr><th>Muestra</th><th>Bacteria real</th><th>Eligió</th><th>Resultado</th><th>Puntaje</th></tr>'
+      + state.historial.map(r=>'<tr><td>'+r.muestra+'</td><td>'+r.real+'</td><td>'+r.elegida+'</td><td>'+(r.ok?'Correcta':'Incorrecta')+'</td><td class="num">'+r.total+'/100</td></tr>').join('')
+      + '</table></div>';
+  }
+  return h;
+}
+function bindFase(f){
+  if(f==='inicio'){
+    qsa('[data-muestra]').forEach(b=>{ b.onclick = ()=>iniciarCaso(b.dataset.muestra); });
+  } else if(f==='siembra'){
+    qsa('.medio-card input').forEach(inp=>{
+      inp.onchange = ()=>{
+        const card = inp.closest('.medio-card');
+        if(inp.checked){ if(!state.mediosSel.includes(inp.value)) state.mediosSel.push(inp.value); card.classList.add('sel'); }
+        else { state.mediosSel = state.mediosSel.filter(m=>m!==inp.value); card.classList.remove('sel'); }
+        const b = $('#btnIncubar');
+        if(b) b.disabled = state.mediosSel.length===0;
+        const av = $('#avisoSiembra'); if(av) av.textContent = '';
+      };
+    });
+    const b = $('#btnIncubar'); if(b) b.onclick = ()=>incubar(false);
+  } else if(f==='observacion'){
+    const hay = state.mediosSembrados.some(m=>BACTERIAS[state.bact].colonias[m] && BACTERIAS[state.bact].colonias[m].crece);
+    if(hay){
+      qsa('.tab').forEach(t=>{ t.onclick = ()=>{ state.tabObs = t.dataset.medio; mostrarTab(); }; });
+      const c = $('#btnContinuarObs'); if(c) c.onclick = ()=>go('gram');
+      mostrarTab();
+    } else {
+      const r = $('#btnResiembra'); if(r) r.onclick = ()=>{
+        state.log = state.log.filter(l=>l.tag!=='siembra');
+        state.mediosSel = [];
+        go('siembra');
+      };
+    }
+  } else if(f==='gram'){
+    const t = $('#btnTincion'); if(t) t.onclick = ()=>{ state.gramHecho = true; renderFase(); };
+    if(state.gramHecho && state.gramResp===null){
+      qsa('label.opt input').forEach(inp=>{
+        inp.onchange = ()=>{ qsa('label.opt').forEach(l=>l.classList.remove('sel')); inp.closest('label.opt').classList.add('sel'); };
+      });
+      const c = $('#btnConfGram'); if(c) c.onclick = confirmGram;
+    }
+    const cont = $('#btnContinuarGram'); if(cont) cont.onclick = ()=>go('orientacion');
+  } else if(f==='orientacion'){
+    qsa('[data-orient]').forEach(b=>{ b.onclick = ()=>elegirOrientacion(b.dataset.orient); });
+    const cont = $('#btnContinuarOrient'); if(cont) cont.onclick = ()=>go('bioquimica');
+  } else if(f==='bioquimica'){
+    qsa('[data-prueba]').forEach(b=>{ b.onclick = ()=>hacerPrueba(b.dataset.prueba); });
+    const id = $('#btnIrID'); if(id) id.onclick = irIdentificacion;
+  } else if(f==='identificacion'){
+    const c = $('#btnConfID'); if(c) c.onclick = confirmarID;
+  } else if(f==='informe'){
+    const r = $('#btnRetrySame'); if(r) r.onclick = ()=>{ state.forzado = {m:state.muestra, b:state.bact}; iniciarCaso(state.muestra); };
+    const n = $('#btnNewSame'); if(n) n.onclick = ()=>iniciarCaso(state.muestra);
+    const o = $('#btnOther'); if(o) o.onclick = ()=>{ state.forzado = null; go('inicio'); };
+    const pr = $('#btnPrint'); if(pr) pr.onclick = ()=>window.print();
+    const cb = $('#btnCajaInforme'); if(cb) cb.onclick = ()=>$('#dlgCaja').showModal();
+  }
+}
+function iniciarCaso(mid){
+  let bact;
+  if(state.forzado && state.forzado.m===mid){ bact = state.forzado.b; state.forzado = null; }
+  else {
+    const pool = MUESTRAS[mid].pool;
+    bact = pool[Math.floor(Math.random()*pool.length)];
+  }
+  resetState();
+  state.muestra = mid;
+  state.bact = bact;
+  go('siembra');
+}
+
+/* ---------- Fase: SIEMBRA ---------- */
+function htmlSiembra(){
+  const m = MUESTRAS[state.muestra];
+  let h = '<div class="card"><h2>Caso: '+m.nombre+'</h2>'
+    + '<p class="pac mini">'+m.paciente+'</p>'
+    + '<p class="caso-txt">'+m.caso+'</p>'
+    + '<p class="mini"><b>Nota del modelo:</b> '+m.nota+'</p></div>';
+  h += '<div class="card"><h2>Fase 1 · Siembra</h2>'
+    + '<p class="consejo">Piense antes de elegir: cada medio aporta información distinta. ¿Qué necesita saber del agente en esta muestra?</p>'
+    + '<div class="medios">';
+  Object.entries(MEDIOS).forEach(([mid,M])=>{
+    h += '<label class="medio-card'+(state.mediosSel.includes(mid)?' sel':'')+'">'
+      + '<input type="checkbox" value="'+mid+'"'+(state.mediosSel.includes(mid)?' checked':'')+'>'
+      + '<span class="ok-badge">Seleccionado</span>'
+      + '<div><b><span class="swatch" style="background:'+M.colorMedio+'"></span>'+M.nombre+'</b> <span class="mini">· '+M.sub+'</span></div>'
+      + '<p class="mini" style="margin:6px 0 0">'+M.proposito+'</p></label>';
+  });
+  h += '</div>'
+    + '<p class="mini">Debe sembrar al menos un medio. Recomendación general: agar sangre + MacConkey como panel base.</p>'
+    + '<p id="avisoSiembra" class="mini" style="color:var(--err)"></p>'
+    + '<button id="btnIncubar" class="btn primary" type="button"'+(state.mediosSel.length?'':' disabled')+'>Incubar 24 h a 37 °C</button>'
+    + '</div>';
+  return h;
+}
+function incubar(saltar){
+  if(!state.mediosSel.length){
+    const av = $('#avisoSiembra'); if(av) av.textContent = 'Debe seleccionar al menos un medio de cultivo.';
+    return;
+  }
+  state.mediosSembrados = [...state.mediosSel];
+  state.siembras++;
+  state.tabObs = null;
+  const s = state.mediosSembrados.includes('sangre');
+  const m = state.mediosSembrados.includes('macconkey');
+  const n = state.mediosSembrados.includes('nutritivo');
+  if(s && m) log('ok','Panel base correcto: agar sangre + MacConkey (15/15 en la rúbrica de medios).',0,'siembra');
+  else {
+    if(!s) log('adv','No sembró agar sangre: pierde la hemólisis y la morfología colonial (−7 en la rúbrica de medios).',0,'siembra');
+    if(!m) log('adv','No sembró MacConkey: pierde la clave selectiva/diferencial (−8 en la rúbrica de medios).',0,'siembra');
+  }
+  if(n) log('info','Agar nutritivo sembrado: medio general de mantenimiento; aporta poco diferencial.',0,'siembra');
+  const hay = state.mediosSembrados.some(m2=>BACTERIAS[state.bact].colonias[m2] && BACTERIAS[state.bact].colonias[m2].crece);
+  if(!hay) log('err','Sembró solo medios donde esta bacteria no se desarrolla: no hay colonias para trabajar. Se repetirá la siembra (−5).',0,'caso');
+  if(saltar){ postIncubar(); return; }
+  const ov = $('#overlay');
+  ov.classList.add('on');
+  ov.setAttribute('aria-hidden','false');
+  setTimeout(()=>{
+    ov.classList.remove('on');
+    ov.setAttribute('aria-hidden','true');
+    postIncubar();
+  }, 1400);
+}
+function postIncubar(){ go('observacion'); }
+
+/* ---------- Fase: OBSERVACIÓN ---------- */
+function htmlObservacion(){
+  const hay = state.mediosSembrados.some(m=>BACTERIAS[state.bact].colonias[m] && BACTERIAS[state.bact].colonias[m].crece);
+  if(!hay){
+    return '<div class="card"><h2>Incubación terminada: sin desarrollo</h2>'
+      + fbHTML('err','Ningún medio sembrado permite el desarrollo de la bacteria.',
+        '<p>Las placas incubadas están estériles: esta bacteria quedó inhibida por los medios elegidos. En el laboratorio esto significa que se perdió tiempo y muestra.</p>')
+      + '<button id="btnResiembra" class="btn primary" type="button">Volver a elegir los medios (−5)</button>'
+      + '</div>';
+  }
+  if(!state.tabObs) state.tabObs = state.mediosSembrados[0];
+  let h = '<div class="card"><h2>Fase 2 · Desarrollo en los medios (24 h · 37 °C)</h2>'
+    + '<p class="consejo">Observe cada placa: morfología de las colonias, pigmentos, hemólisis y qué medios inhibieron el desarrollo. El "sin desarrollo" también es información.</p>'
+    + '<div class="tabs" role="tablist">';
+  state.mediosSembrados.forEach(m=>{
+    h += '<button class="tab" type="button" role="tab" data-medio="'+m+'" aria-selected="'+(m===state.tabObs)+'">'+MEDIOS[m].nombre+'</button>';
+  });
+  h += '</div><div id="tabContent" aria-live="polite"></div>'
+    + '<div class="fila-btn"><button id="btnContinuarObs" class="btn primary" type="button">Tomar una colonia → Tinción de Gram</button></div>'
+    + '</div>';
+  return h;
+}
+function mostrarTab(){
+  const m = state.tabObs;
+  const b = BACTERIAS[state.bact];
+  const col = b.colonias[m];
+  const M = MEDIOS[m];
+  qsa('.tab').forEach(t=>t.setAttribute('aria-selected', t.dataset.medio===m ? 'true':'false'));
+  $('#tabContent').innerHTML =
+    '<figure class="placa"><div class="med-name">'+M.nombre+' <span class="mini">· '+M.sub+'</span></div>'
+    + dishSVG(state.bact, m, 180)
+    + '<figcaption>'+col.desc+'</figcaption></figure>';
+}
+/* ---------- Fase: TINCIÓN DE GRAM ---------- */
+function htmlGram(){
+  const b = BACTERIAS[state.bact];
+  if(!state.gramHecho){
+    return '<div class="card"><h2>Fase 3 · Tinción de Gram</h2>'
+      + '<p>Con la colonia aislada se prepara el extendido y se realiza la tinción de Gram: coloración con cristal violeta y lugol, decoloración con alcohol-acetona, contraste con safranina.</p>'
+      + '<p class="consejo">Recuerde: el color indica la reacción (violeta = Gram +; rosado = Gram −) y la disposición celular orienta el género (cúmulos, cadenas, pares, bacilos).</p>'
+      + '<button id="btnTincion" class="btn primary" type="button">Realizar la tinción y observar al microscopio</button></div>';
+  }
+  let h = '<div class="card"><h2>Fase 3 · Tinción de Gram</h2>';
+  if(state.gramResp !== null){
+    const okc = state.gramEval;
+    const correcta = OPCIONES_GRAM.find(o=>o.id===b.optGram).txt;
+    if(okc) h += fbHTML('ok','Interpretación correcta.','<p>Lectura registrada: <b>'+correcta+'</b> (+15).</p>');
+    else h += fbHTML('err','Interpretación incorrecta.','<p>La imagen mostraba: <b>'+correcta+'</b>. El color da la reacción (violeta = Gram +; rosado = Gram −) y la disposición orienta el género (cúmulos → estafilococos; cadenas → estreptococos; pares y cadenas cortas → enterococos).</p>');
+    h += '<div class="micro-box">'+microSVG(b.micro)+'</div>'
+      + '<p class="mini" style="text-align:center">'+b.gramDesc+'</p>'
+      + '<p class="mini"><b>Su lectura:</b> '+OPCIONES_GRAM.find(o=>o.id===state.gramResp).txt+'</p>'
+      + '<div class="fila-btn"><button id="btnContinuarGram" class="btn primary" type="button">Continuar → Prueba de orientación</button></div>';
+  } else {
+    h += '<div class="micro-box">'+microSVG(b.micro)+'</div>'
+      + '<p style="text-align:center" class="mini">'+b.gramDesc+'</p>'
+      + '<h3>¿Qué observa en el campo?</h3>';
+    OPCIONES_GRAM.forEach(o=>{
+      h += '<label class="opt"><input type="radio" name="g" value="'+o.id+'"><span>'+o.txt+'</span></label>';
+    });
+    h += '<button id="btnConfGram" class="btn primary" type="button">Confirmar interpretación (+15)</button>';
+  }
+  h += '</div>';
+  return h;
+}
+function confirmGram(){
+  const sel = document.querySelector('input[name="g"]:checked');
+  if(!sel){
+    const av = $('#avisoGram'); if(av) av.textContent = 'Seleccione una opción antes de confirmar.';
+    return;
+  }
+  const b = BACTERIAS[state.bact];
+  state.gramResp = sel.value;
+  state.gramEval = sel.value === b.optGram;
+  if(state.gramEval) log('ok','Tinción de Gram interpretada correctamente: '+b.gramTxt+' (+15).',15);
+  else log('err','Interpretación de la tinción incorrecta: la imagen mostraba '+b.gramTxt+'. (0)',0);
+  renderFase();
+}
+
+/* ---------- Fase: ORIENTACIÓN ---------- */
+function htmlOrientacion(){
+  const b = BACTERIAS[state.bact];
+  let h = '<div class="card"><h2>Fase 4 · Prueba de orientación</h2>';
+  if(state.orientErr && !state.orientacion){
+    h += fbHTML('err','Prueba no apropiada para esta morfología.','<p>'+state.orientErrTxt+'</p>')
+      + '<button class="btn primary" type="button" data-orient="'+b.orient+'">Realizar la prueba correcta: '+PRUEBAS[b.orient].nombre+'</button>';
+  } else if(state.orientacion){
+    const r = resolverPrueba(state.orientacion, b);
+    h += resultadoCard(state.orientacion, r)
+      + '<div class="fila-btn"><button id="btnContinuarOrient" class="btn primary" type="button">Continuar → Panel bioquímico</button></div>';
+  } else {
+    h += '<p class="consejo">Una sola prueba de tamizaje separa los grandes grupos: catalasa en cocos Gram +, oxidasa en bacilos Gram −.</p>'
+      + '<div class="fila-btn">'
+      + '<button class="btn sec" type="button" data-orient="catalasa">Catalasa</button>'
+      + '<button class="btn sec" type="button" data-orient="oxidasa">Oxidasa</button>'
+      + '</div>';
+  }
+  h += '</div>';
+  return h;
+}
+function elegirOrientacion(chosen){
+  const b = BACTERIAS[state.bact];
+  if(chosen === b.orient){
+    state.orientacion = chosen;
+    log('ok','Prueba de orientación correcta: '+PRUEBAS[chosen].nombre+' (+10).',10);
+  } else {
+    state.orientErr = chosen;
+    state.orientErrTxt = chosen==='catalasa'
+      ? 'La catalasa no discrimina entre bacilos Gram negativos (casi todos son catalasa +). En bacilos Gram − la prueba de orientación es la OXIDASA.'
+      : 'La oxidasa no aporta información en cocos Gram positivos. En cocos Gram + la prueba de orientación es la CATALASA.';
+    log('err','Prueba de orientación no apropiada: eligió '+PRUEBAS[chosen].nombre+' en '+b.gramTxt+'. (0)',0);
+  }
+  renderFase();
+}
+function resolverPrueba(tid, b){
+  const P = PRUEBAS[tid];
+  const e = P.porBacteria ? P.porBacteria[b.bio[tid]] : P.res[b.bio[tid]];
+  return {P, e, valor:b.bio[tid]};
+}
+function resultadoCard(tid, r, conVisual){
+  const vis = (conVisual!==false) ? testSVG(r.e.visual) : '';
+  let tabla = '';
+  if(r.e.tabla){
+    tabla = '<table class="tbl" style="max-width:420px">' + r.e.tabla.map(f=>'<tr><td>'+f[0]+'</td><td style="font-weight:700">'+f[1]+'</td></tr>').join('') + '</table>';
+  }
+  return '<div class="res"><div class="rhead"><b>'+r.P.nombre+'</b>'
+    + '<span class="pill">'+r.e.pill+'</span>'
+    + '<span class="mini">'+r.P.principio+'</span></div>'
+    + '<div class="rbody">'+(vis?'<div>'+vis+'</div>':'')+'<div><p>'+r.e.obs+'</p>'+tabla+'</div></div>'
+    + '<div class="rinterp"><b>Interpretación:</b> '+r.e.interp+'</div></div>';
+}
+
+/* ---------- Fase: BIOQUÍMICA ---------- */
+function htmlBioquimica(){
+  const b = BACTERIAS[state.bact];
+  const panel = PANELES[b.panel];
+  let h = '<div class="card"><h2>Fase 5 · Panel bioquímico: '+panel.nombre+'</h2>'
+    + '<p class="mini"><b>Ya obtenido:</b> '+b.gramTxt+' · '+PRUEBAS[b.orient].nombre+' '+((b.bio[b.orient]==='pos')?'+':'−')+'</p>'
+    + '<p class="consejo">Acumule evidencia antes de concluir: con menos de 3 resultados del panel la identificación se considera precipitada.</p>'
+    + '<div class="evi"><b>Evidencia:</b> ' + (state.pruebas.length ? state.pruebas.map(t=>'<span class="chip">'+state.resultados[t].corto+'</span>').join(' ') : '<span class="mini">sin pruebas aún</span>') + '</div>'
+    + '<h3>Pruebas disponibles</h3><div class="tests">';
+  panel.pruebas.forEach(tid=>{
+    const P = PRUEBAS[tid];
+    const usada = state.pruebas.includes(tid);
+    const requiereSangre = P.requiere==='sangre' && !state.mediosSembrados.includes('sangre');
+    h += '<button class="test-btn" type="button" data-prueba="'+tid+'"'+((usada||requiereSangre)?' disabled':'')+'>'
+      + '<span class="pr">'+P.nombre+(usada?' · realizada':'')+'</span>'
+      + '<span class="pp">'+P.principio+'</span>'
+      + (requiereSangre?'<span class="aviso">Requiere haber sembrado agar sangre.</span>':'')
+      + '</button>';
+  });
+  h += '</div>'
+    + '<div class="fila-btn"><button id="btnIrID" class="btn primary" type="button">Ir a la identificación ('+state.pruebas.length+' resultado/s)</button></div>';
+  state.pruebas.forEach(tid=>{
+    h += resultadoCard(tid, resolverPrueba(tid, b));
+  });
+  h += '</div>';
+  return h;
+}
+function hacerPrueba(tid){
+  if(state.pruebas.includes(tid)) return;
+  const b = BACTERIAS[state.bact];
+  const {P, e} = resolverPrueba(tid, b);
+  state.pruebas.push(tid);
+  state.resultados[tid] = {corto:e.corto, pill:e.pill, obs:e.obs, interp:e.interp, nombre:P.nombre};
+  log('info','Prueba realizada — '+P.nombre+': '+e.corto+'.',0);
+  renderFase();
+}
+function irIdentificacion(){
+  if(state.pruebas.length < 3){
+    log('adv','Identificación con evidencia limitada: solo '+state.pruebas.length+' prueba(s) del panel.',0);
+  }
+  go('identificacion');
+}
+
+/* ---------- Fase: IDENTIFICACIÓN ---------- */
+function htmlIdentificacion(){
+  const b = BACTERIAS[state.bact];
+  let h = '<div class="card"><h2>Fase 6 · Identificación final</h2>'
+    + '<p class="consejo">Contraste SU perfil con cada candidato antes de confirmar. La identificación correcta vale 30 puntos; mismo género, 10.</p>'
+    + '<div class="evi"><b>Su evidencia:</b> '+b.gramTxt
+    + (state.pruebas.length? ' · ' + state.pruebas.map(t=>state.resultados[t].corto).join(' · ') : ' · sin pruebas bioquímicas') + '</div>'
+    + '<div class="field"><label for="selID"><b>Especie identificada</b></label>'
+    + '<select id="selID"><option value="">— seleccione —</option>'
+    + '<optgroup label="Cocos Gram positivos">'
+    + ['aureus','pseudintermedius','agalactiae','faecalis'].map(id=>'<option value="'+id+'">'+BACTERIAS[id].nombre+'</option>').join('')
+    + '</optgroup><optgroup label="Bacilos Gram negativos">'
+    + ['ecoli','proteus','aeruginosa'].map(id=>'<option value="'+id+'">'+BACTERIAS[id].nombre+'</option>').join('')
+    + '</optgroup></select></div>'
+    + '<button id="btnConfID" class="btn primary" type="button">Confirmar identificación</button>'
+    + '</div>';
+  return h;
+}
+function confirmarID(){
+  const v = $('#selID').value;
+  if(!v){
+    const av = $('#avisoID'); if(av) av.textContent = 'Seleccione una especie.';
+    return;
+  }
+  state.idElegida = v;
+  const b = BACTERIAS[state.bact];
+  const okc = v === state.bact;
+  const mismo = !okc && BACTERIAS[v].genero === b.genero;
+  if(okc) log('ok','Identificación correcta: '+b.nombre+' (+30).',30);
+  else if(mismo) log('err','Identificación parcial: eligió '+BACTERIAS[v].nombre+' — mismo género, especie incorrecta (+10).',10);
+  else log('err','Identificación incorrecta: eligió '+BACTERIAS[v].nombre+'; el perfil correspondía a '+b.nombre+'. (0)',0);
+  const rub = calcRubrica();
+  state.historial.push({muestra:MUESTRAS[state.muestra].nombre, real:b.nombre, elegida:BACTERIAS[v].nombre, ok:okc, total:rub.total});
+  go('informe');
+}
+
+/* ---------- Rúbrica ---------- */
+function calcRubrica(){
+  const b = BACTERIAS[state.bact];
+  const pMedios = (state.mediosSembrados.includes('sangre')?7:0) + (state.mediosSembrados.includes('macconkey')?8:0);
+  const pGram = (state.gramEval===true) ? 15 : 0;
+  const orientOK = state.orientacion === b.orient;
+  const pOrient = orientOK ? 10 : 0;
+  const nPanel = PANELES[b.panel].pruebas.length;
+  const pPanel = Math.round(30 * Math.min(state.pruebas.length, nPanel) / nPanel);
+  const idOK = state.idElegida === state.bact;
+  const mismoGen = state.idElegida && BACTERIAS[state.idElegida].genero === b.genero;
+  const pId = idOK ? 30 : (mismoGen ? 10 : 0);
+  const penal = Math.max(0, (state.siembras-1)) * 5;
+  const total = Math.max(0, Math.min(100, pMedios + pGram + pOrient + pPanel + pId - penal));
+  const grade = total>=85 ? 'Excelente: flujo completo y correcto.'
+    : total>=70 ? 'Muy bueno: domina el flujo, hay detalles por pulir.'
+    : total>=50 ? 'Aprobado con observaciones: repase los puntos señalados.'
+    : 'Requiere repaso: vuelva a recorrer el árbol con la caja blanca abierta.';
+  return {pMedios, pGram, pOrient, pPanel, pId, penal, total, grade, idOK, mismoGen, orientOK,
+    rows:[
+      {c:'Selección de medios', max:15, p:pMedios, d:(state.mediosSembrados.includes('sangre')?'sangre: sí':'sangre: no')+' · '+(state.mediosSembrados.includes('macconkey')?'MacConkey: sí':'MacConkey: no')+' · nutritivo opcional'},
+      {c:'Tinción e interpretación de Gram', max:15, p:pGram, d:state.gramResp ? OPCIONES_GRAM.find(o=>o.id===state.gramResp).txt : 'sin respuesta'},
+      {c:'Prueba de orientación', max:10, p:pOrient, d:state.orientacion ? PRUEBAS[state.orientacion].nombre : (state.orientErr ? 'eligió '+PRUEBAS[state.orientErr].nombre+' (no apropiada)' : 'sin respuesta')},
+      {c:'Panel bioquímico', max:30, p:pPanel, d:state.pruebas.length+' de '+nPanel+' pruebas del panel'},
+      {c:'Identificación final', max:30, p:pId, d:state.idElegida ? BACTERIAS[state.idElegida].nombre : 'sin respuesta'},
+      {c:'Siembras repetidas sin desarrollo', max:'−5 c/u', p:-penal, d:state.siembras>1 ? state.siembras+' siembras' : 'sin penalización'}
+    ]};
+}
+
+/* ---------- Fase: INFORME ---------- */
+function htmlInforme(){
+  const b = BACTERIAS[state.bact];
+  const m = MUESTRAS[state.muestra];
+  const rub = calcRubrica();
+  let h = '<section aria-label="Informe del caso">';
+  h += '<div class="card"><h2>Informe del caso · '+m.nombre+'</h2>';
+  if(rub.idOK) h += fbHTML('ok','Identificación correcta: '+b.nombre+'.','<p>Buen trabajo: el perfil bioquímico y la morfología sostienen la conclusión.</p>');
+  else if(rub.mismoGen) h += fbHTML('adv','Identificación parcial.', '<p>Eligió <b>'+BACTERIAS[state.idElegida].nombre+'</b>: correcto en el género, incorrecto en la especie. Revise el panel diferencial en el camino óptimo.</p>');
+  else h += fbHTML('err','Identificación incorrecta.','<p>Eligió <b>'+(state.idElegida?BACTERIAS[state.idElegida].nombre:'ninguna')+'</b>; el caso correspondía a <b>'+b.nombre+'</b>. Compare los perfiles en el camino óptimo y la ficha.</p>');
+  h += '<div class="score-wrap"><div class="score">'+rub.total+'<small>de 100</small></div>'
+    + '<div><p style="margin:0"><b>'+rub.grade+'</b></p>'
+    + '<p class="mini" style="margin:4px 0 0">Bacteria del caso: <b>'+b.nombre+'</b> · '+b.gramTxt+' · '+PRUEBAS[b.orient].nombre+' '+((b.bio[b.orient]==='pos')?'+':'−')+'</p></div></div>'
+    + '</div>';
+  h += '<div class="card"><h2>Rúbrica</h2><table class="tbl"><tr><th>Criterio</th><th>Máximo</th><th>Obtenido</th><th>Detalle</th></tr>'
+    + rub.rows.map(r=>'<tr><td>'+r.c+'</td><td class="num">'+r.max+'</td><td class="num" style="font-weight:700">'+r.p+'</td><td class="mini">'+r.d+'</td></tr>').join('')
+    + '<tr><td style="font-weight:700">Total</td><td class="num">100</td><td class="num" style="font-weight:800">'+rub.total+'</td><td></td></tr></table></div>';
+  h += '<div class="grid2">';
+  h += '<div class="card" style="margin:0"><h2>Registro de decisiones</h2><ul class="log">'
+    + state.log.map(l=>'<li class="'+l.tipo+'"><span>'+l.texto+'</span>'+(l.pts?'<span class="pts">'+(l.pts>0?'+':'')+l.pts+'</span>':'')+'</li>').join('')
+    + '</ul></div>';
+  h += '<div class="card" style="margin:0"><h2>Camino óptimo</h2><ol>'
+    + b.camino.map(p=>'<li>'+p+'</li>').join('')
+    + '</ol><p class="mini"><b>Claves del perfil:</b> '+b.claves.join(' · ')+'</p></div>';
+  h += '</div>';
+  h += '<div class="card"><h2>Ficha de la especie: '+b.nombre+'</h2>'
+    + '<p>'+b.ficha.resumen+'</p>'
+    + '<p><b>Significado clínico:</b> '+b.ficha.clinica+'</p>'
+    + '<p class="mini"><b>Nota de variabilidad:</b> '+b.ficha.variabilidad+'</p></div>';
+  const sug = [];
+  if(!state.mediosSembrados.includes('sangre')) sug.push('Siembre siempre agar sangre: da morfología colonial y hemólisis, las dos observaciones más económicas del flujo.');
+  if(!state.mediosSembrados.includes('macconkey')) sug.push('MacConkey es la clave selectiva/diferencial para bacilos Gram −: sin ella se pierde la lactosa y la inhibición de Gram +.');
+  if(state.gramEval===false) sug.push('Repase la lectura de la tinción: color (reacción de pared) y disposición celular (cúmulos/cadenas/pares/bacilos).');
+  if(!rub.orientOK) sug.push('La prueba de orientación debe elegirse según la morfología: catalasa para cocos Gram +, oxidasa para bacilos Gram −.');
+  if(!rub.idOK) sug.push('Antes de identificar, contraste el perfil completo con cada candidato; las fichas del modo docente sirven como tabla de referencia.');
+  if(rub.penal>0) sug.push('Verifique la selectividad de los medios antes de sembrar: MacConkey inhibe Gram +; sembrar solo medios inadecuados pierde tiempo y muestra.');
+  if(state.pruebas.length < 3) sug.push('Identifique solo con evidencia suficiente: menos de 3 pruebas del panel es un diagnóstico precipitado.');
+  h += '<div class="card"><h2>Sugerencias de estudio</h2>'
+    + (sug.length ? '<ul>'+sug.map(s=>'<li>'+s+'</li>').join('')+'</ul>' : '<p>Flujo impecable: ningún punto a corregir. Pruebe con otra bacteria del mismo caso para fijar el árbol de decisión.</p>')
+    + '</div>';
+  h += '<div class="card"><h2>Límites del modelo (caja blanca)</h2>'
+    + '<p class="mini">Este simulador asume cultivo puro significativo y perfiles bioquímicos prototípicos; no modela cultivos mixtos, cuantificación (UFC/mL), antibiograma ni métodos moleculares. Recuerde: el mapa no es el territorio.</p>'
+    + '<button id="btnCajaInforme" class="btn sec small" type="button">Ver caja blanca completa</button></div>';
+  if(state.historial.length){
+    h += '<div class="card no-print"><h2>Casos resueltos en esta sesión</h2><table class="tbl">'
+      + '<tr><th>Muestra</th><th>Bacteria real</th><th>Eligió</th><th>Resultado</th><th>Puntaje</th></tr>'
+      + state.historial.map(r=>'<tr><td>'+r.muestra+'</td><td>'+r.real+'</td><td>'+r.elegida+'</td><td>'+(r.ok?'Correcta':'Incorrecta')+'</td><td class="num">'+r.total+'/100</td></tr>').join('')
+      + '</table></div>';
+  }
+  h += '<div class="card no-print"><div class="fila-btn">'
+    + '<button id="btnRetrySame" class="btn sec" type="button">Reintentar esta bacteria</button>'
+    + '<button id="btnNewSame" class="btn primary" type="button">Nuevo caso (misma muestra)</button>'
+    + '<button id="btnOther" class="btn sec" type="button">Elegir otra muestra</button>'
+    + '<button id="btnPrint" class="btn sec" type="button">Imprimir informe</button>'
+    + '</div></div></section>';
+  return h;
+}
+
+/* ---------- Modo docente ---------- */
+function buildDocente(){
+  let h = '<h3>Fijar el próximo caso (uso de demostración)</h3>'
+    + '<p class="mini">Para autoevaluación, deje en <b>Aleatorio</b>: el estudiante no conocerá la bacteria de antemano.</p>'
+    + '<div class="field"><select id="selForzado"><option value="aleatorio">Aleatorio (recomendado)</option>';
+  Object.entries(MUESTRAS).forEach(([mid,m])=>{
+    h += '<optgroup label="'+m.nombre+'">';
+    m.pool.forEach(bid=>{ h += '<option value="'+mid+'|'+bid+'">'+BACTERIAS[bid].nombre+'</option>'; });
+    h += '</optgroup>';
+  });
+  h += '</select></div>'
+    + '<button id="btnAplicarForzado" class="btn sec" type="button">Aplicar al próximo caso</button> <span id="fxDocente" class="mini"></span>'
+    + '<hr><h3>Fichas de las especies del modelo</h3>';
+  Object.values(BACTERIAS).forEach(b=>{
+    const panel = PANELES[b.panel];
+    const bio = panel.pruebas.map(tid=>resolverPrueba(tid,b).e.corto).join(' · ');
+    h += '<details class="detalle"><summary>'+b.nombre+' ('+b.gramTxt+')</summary>'
+      + '<table class="tbl">'
+      + '<tr><th style="width:190px">Campo</th><th>Perfil del modelo</th></tr>'
+      + '<tr><td>Tinción</td><td>'+b.gramTxt+'</td></tr>'
+      + '<tr><td>Prueba de orientación</td><td>'+PRUEBAS[b.orient].nombre+': '+((b.bio[b.orient]==='pos')?'+':'−')+'</td></tr>'
+      + '<tr><td>Agar sangre</td><td>'+b.colonias.sangre.desc+'</td></tr>'
+      + '<tr><td>MacConkey</td><td>'+b.colonias.macconkey.desc+'</td></tr>'
+      + '<tr><td>Agar nutritivo</td><td>'+b.colonias.nutritivo.desc+'</td></tr>'
+      + '<tr><td>Bioquímica ('+panel.nombre+')</td><td>'+bio+'</td></tr>'
+      + '<tr><td>Significado clínico</td><td>'+b.ficha.clinica+'</td></tr>'
+      + '<tr><td>Variabilidad</td><td>'+b.ficha.variabilidad+'</td></tr>'
+      + '</table></details>';
+  });
+  $('#dlgDocenteBody').innerHTML = h;
+  const btn = $('#btnAplicarForzado');
+  if(btn) btn.onclick = ()=>{
+    const v = $('#selForzado').value;
+    if(v==='aleatorio'){ state.forzado = null; $('#fxDocente').textContent = 'Próximo caso: aleatorio.'; }
+    else {
+      const [mid,bid] = v.split('|');
+      state.forzado = {m:mid, b:bid};
+      $('#fxDocente').textContent = 'Próximo caso fijado: '+MUESTRAS[mid].nombre+' — '+BACTERIAS[bid].nombre+'.';
+    }
+  };
+}
+
+/* ---------- Inicio ---------- */
+function init(){
+  $('#btnCaja').onclick = ()=>$('#dlgCaja').showModal();
+  $('#btnDocente').onclick = ()=>{ buildDocente(); $('#dlgDocente').showModal(); };
+  $('#btnReiniciar').onclick = ()=>{
+    if(confirm('¿Reiniciar la sesión? Se perderá el caso en curso; el historial de la sesión se conserva.')){
+      const hist = state.historial;
+      resetState();
+      state.historial = hist;
+      go('inicio');
+    }
+  };
+  qsa('[data-cerrar]').forEach(b=>{ b.onclick = ()=>document.getElementById(b.dataset.cerrar).close(); });
+  renderStepper();
+  renderFase();
+}
+init();
+</script>
+</body>
+</html>
